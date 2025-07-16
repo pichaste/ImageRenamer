@@ -245,8 +245,12 @@
             font-size: 0.95rem;
         }
         .modal-footer {
-            text-align: right;
+            text-align: center; /* Centered buttons */
             margin-top: 15px; /* Spacing for the select all option */
+            display: flex; /* Use flexbox for button alignment */
+            justify-content: center; /* Center buttons horizontally */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 10px; /* Space between buttons */
         }
         .modal-footer button {
             padding: 10px 20px;
@@ -256,18 +260,26 @@
             font-size: 1rem;
         }
         #modalConfirmGroupBtn {
-            background-color: #007bff; /* Changed to primary blue for initial choice */
+            background-color: #007bff; /* Primary blue */
             color: white;
         }
         #modalConfirmGroupBtn:hover {
             background-color: #0056b3;
         }
         #modalSkipGroupBtn {
-            background-color: #6c757d;
+            background-color: #007bff; /* Changed to primary blue */
             color: white;
-            margin-left: 10px;
+            /* margin-left: 10px; Removed as gap handles spacing */
         }
         #modalSkipGroupBtn:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+        #modalCancelBtn {
+            background-color: #6c757d; /* Grey for cancel */
+            color: white;
+            /* margin-left: 10px; Removed as gap handles spacing */
+        }
+        #modalCancelBtn:hover {
             background-color: #5a6268;
         }
         /* Specific styling for the "Confirm Renames" button when in individual mode */
@@ -388,6 +400,15 @@
             background-color: #218838;
         }
 
+        /* Styling for the Reset button */
+        #resetBtn {
+            background-color: #6c757d; /* Grey color for reset */
+            color: white; /* White text */
+        }
+        #resetBtn:hover {
+            background-color: #5a6268; /* Darker grey on hover */
+        }
+
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -412,12 +433,16 @@
                 width: 100%; /* Full width for stacked buttons */
                 max-width: none; /* Remove max-width constraint */
             }
+            .modal-footer button {
+                flex-grow: 1; /* Allow modal buttons to grow and fill space */
+                width: 100%; /* Full width for stacked buttons */
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Image Renamer</h1>
+        <h1>Rename Files</h1>
         <!-- <p style="text-align: center;">Upload your images, define the naming convention, and download them with new names!</p> -->
         <p style="text-align: center;">Upload your files, rename, and download them with new names!</p>
 
@@ -450,7 +475,7 @@
                     <option value="FountainPen">Fountain Pen</option>
                     <option value="GelRefill">Gel Refill</option>
                     <option value="Ink">Ink</option>
-                    <option value="Inkwell">Inkwell</option>
+                    <option value="Inkwell">Inkwell</p>
                     <option value="Led">Led</option>
                     <option value="LeatherCase">Leather Case</option>
                     <option value="MechanicalPencil">Mechanical Pencil</option>
@@ -493,7 +518,7 @@
         </label>
 
         <div class="button-group" id="mainButtonGroup">
-            <button id="processFilesBtn">Process & Show Names</button>
+            <button id="processFilesBtn">Rename Files</button>
             <button id="resetBtn">Start Over</button> <!-- Updated Reset to Start Over -->
         </div>
 
@@ -525,8 +550,8 @@
             </div>
             <div class="modal-footer">
                 <!-- Buttons dynamically changed by JS -->
-                <button id="modalConfirmGroupBtn">Confirm Group(s)</button>
-                <button id="modalSkipGroupBtn">Skip Grouping (Process All Individually)</button>
+                <button id="modalConfirmGroupBtn">Process All as a Single Group</button>
+                <button id="modalSkipGroupBtn">Rename Each File Individually</button>
                 <button id="modalCancelBtn" style="display: none;">Cancel</button> 
             </div>
         </div>
@@ -680,7 +705,7 @@
             // Show only the drop area
             dropAreaLabel.style.display = 'flex';
             imageUpload.value = ''; // Clear file input
-            processFilesBtn.textContent = 'Process & Show Names'; // Reset button text
+            processFilesBtn.textContent = 'Rename Files'; // Reset button text
             currentProcessingMode = ''; // Reset mode
         }
 
@@ -710,7 +735,7 @@
             if (uploadedFiles.length > 0) {
                 dropAreaLabel.style.display = 'none'; // Hide drop area once files are selected
                 mainButtonGroup.style.display = 'block'; // Show process/download/reset buttons
-                processFilesBtn.textContent = `Process ${uploadedFiles.length} File${uploadedFiles.length > 1 ? 's' : ''}`;
+                processFilesBtn.textContent = `Rename ${uploadedFiles.length} File${uploadedFiles.length > 1 ? 's' : ''}`;
 
                 if (uploadedFiles.length > 1) {
                     showInitialProcessingChoiceModal();
@@ -867,7 +892,7 @@
             mainFormSection.classList.remove('hidden'); // Show main form
             individualFileSectionsContainer.style.display = 'none'; // Hide individual sections
             individualFileSectionsContainer.innerHTML = ''; // Clear any previous individual fields
-            processFilesBtn.textContent = 'Process & Show Names'; // Ensure button text is correct
+            processFilesBtn.textContent = 'Rename Files'; // Ensure button text is correct
             downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
             document.getElementById('fileList').style.display = 'none'; // Hide preview section
         }
@@ -877,7 +902,7 @@
             mainFormSection.classList.add('hidden'); // Hide main form
             individualFileSectionsContainer.style.display = 'block'; // Show individual sections container
             individualFileSectionsContainer.innerHTML = ''; // Clear previous individual fields
-            processFilesBtn.textContent = 'Process & Show Names'; // Ensure button text is correct
+            processFilesBtn.textContent = 'Rename Files'; // Ensure button text is correct
             downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
             document.getElementById('fileList').style.display = 'none'; // Hide preview section
 
