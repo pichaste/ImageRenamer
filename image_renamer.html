@@ -465,51 +465,6 @@
                 max-width: none; /* Remove max-width constraint */
             }
         }
-
-        /* Specific styles for the individual download links modal */
-        #individualDownloadModal .modal-content {
-            max-height: 80vh; /* Limit height to prevent modal from overflowing screen */
-            overflow-y: auto; /* Enable scrolling within the modal if content is long */
-        }
-        #individualDownloadLinks {
-            margin-top: 20px;
-            max-height: 400px; /* Limit height for the links container */
-            overflow-y: auto; /* Make the links container scrollable */
-            padding-right: 10px; /* Add some padding for the scrollbar */
-        }
-        #individualDownloadLinks a {
-            display: block;
-            background-color: #e9ecef;
-            color: #007bff;
-            padding: 10px 15px;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            text-decoration: none;
-            text-align: left;
-            word-break: break-all;
-            transition: background-color 0.2s ease;
-        }
-        #individualDownloadLinks a:hover {
-            background-color: #dbeeff;
-        }
-        #individualDownloadModal .modal-footer {
-            margin-top: 20px;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-        }
-        #closeIndividualDownloadModalBtn {
-            background-color: #6c757d;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.3s ease;
-        }
-        #closeIndividualDownloadModalBtn:hover {
-            background-color: #5a6268;
-        }
     </style>
 </head>
 <body>
@@ -534,6 +489,30 @@
                 <label for="color">Color (Optional):</label>
                 <input type="text" id="color" placeholder="e.g., Black (Optional)">
             </div>
+            <div class="form-group">
+                <label for="edition">Edition (Optional):</label>
+                <select id="edition">
+                    <option value="">None</option>
+                    <option value="Backroom">Backroom</option>
+                    <option value="Collection">Collection</option>
+                    <option value="LE">Limited Edition</option>
+                    <option value="SE">Special Edition</p>
+                    <option value="Vintage">Vintage</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="channel">Channel (Optional):</label>
+                <select id="channel">
+                    <option value="">None</option>
+                    <option value="CarouselBanner">Carousel Banner</option>
+                    <option value="Facebook">Facebook</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="SmallBanner">Small Banner</option>
+                    <option value="TikTok">TikTok</option>
+                    <option value="Twitter">Twitter</option>
+                    <option value="X">X</option>
+                </select>
+            </div>
             <div class="form-group" id="formGroupType">
                 <label for="type">Type:</label>
                 <select id="type">
@@ -552,24 +531,13 @@
                     <option value="LeatherCase">Leather Case</option>
                     <option value="MechanicalPencil">Mechanical Pencil</option>
                     <option value="Notebook">Notebook</option>
-                    <option value="Pad">Pad</option>
+                    <option value="Pad">Pad</p>
                     <option value="Paper">Paper</option>
                     <option value="Refill">Refill</option>
                     <option value="Rollerball">Rollerball</option>
                     <option value="RollerballRefill">Rollerball Refill</option>
                 </select>
                 <span class="error-message" id="errorType">Type is required.</span>
-            </div>
-            <div class="form-group">
-                <label for="edition">Edition (Optional):</label>
-                <select id="edition">
-                    <option value="">None</option>
-                    <option value="Backroom">Backroom</option>
-                    <option value="Collection">Collection</option>
-                    <option value="LE">Limited Edition</option>
-                    <option value="SE">Special Edition</p>
-                    <option value="Vintage">Vintage</option>
-                </select>
             </div>
             <div class="form-group" id="formGroupYear">
                 <label for="year">Year:</label>
@@ -627,21 +595,6 @@
         </div>
     </div>
 
-    <!-- New Modal for Individual File Downloads -->
-    <div id="individualDownloadModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" id="closeIndividualDownloadModalBtnTop">&times;</span>
-            <h2>Download Individual Files</h2>
-            <p>On mobile, browsers may require you to tap each link to download files individually.</p>
-            <div id="individualDownloadLinks">
-                <!-- Links will be inserted here dynamically -->
-            </div>
-            <div class="modal-footer">
-                <button id="closeIndividualDownloadModalBtn">Close</button>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script>
@@ -661,6 +614,7 @@
         const colorInput = document.getElementById('color');
         const typeSelect = document.getElementById('type');
         const editionSelect = document.getElementById('edition');
+        const channelSelect = document.getElementById('channel'); // New channel select element
         const yearInput = document.getElementById('year');
 
         // UI elements
@@ -689,13 +643,6 @@
         const groupSelectAllOption = document.getElementById('groupSelectAllOption'); // Not used in new flow
         const modalCancelBtn = document.getElementById('modalCancelBtn');
 
-        // New individual download modal elements
-        const individualDownloadModal = document.getElementById('individualDownloadModal');
-        const individualDownloadLinksContainer = document.getElementById('individualDownloadLinks');
-        const closeIndividualDownloadModalBtn = document.getElementById('closeIndividualDownloadModalBtn');
-        const closeIndividualDownloadModalBtnTop = document.getElementById('closeIndividualDownloadModalBtnTop');
-
-
         // References to form group elements and error messages for validation (for main form)
         const formGroupBrandName = document.getElementById('formGroupBrandName');
         const errorBrandName = document.getElementById('errorBrandName');
@@ -711,27 +658,15 @@
         imageUpload.addEventListener('change', handleFileSelect);
         processFilesBtn.addEventListener('click', processFiles);
         downloadAllBtn.addEventListener('click', downloadAllRenamedFiles);
-        // Conditional event listener for individual download button
-        downloadIndividualBtn.addEventListener('click', () => {
-            if (isMobileDevice()) {
-                showIndividualDownloadLinks();
-            } else {
-                downloadIndividualFilesDesktop();
-            }
-        });
+        downloadIndividualBtn.addEventListener('click', downloadRenamedFilesIndividually);
         resetBtn.addEventListener('click', resetApp); // Reset button listener
         
         // Event listeners for modals
         closeModalBtn.addEventListener('click', () => groupModal.style.display = 'none'); // For groupModal
-        closeIndividualDownloadModalBtn.addEventListener('click', () => individualDownloadModal.style.display = 'none'); // For individual download modal
-        closeIndividualDownloadModalBtnTop.addEventListener('click', () => individualDownloadModal.style.display = 'none'); // For individual download modal (top X)
 
         window.addEventListener('click', (event) => {
             if (event.target == groupModal) {
                 groupModal.style.display = 'none';
-            }
-            if (event.target == individualDownloadModal) {
-                individualDownloadModal.style.display = 'none';
             }
         });
 
@@ -767,6 +702,9 @@
         editionSelect.addEventListener('input', () => {
             editionSelect.value = capitalizeWordsLiveInput(editionSelect.value);
         });
+        channelSelect.addEventListener('change', () => { // New event listener for channel
+            // No error to clear as it's optional
+        });
         yearInput.addEventListener('input', () => {
             clearError(formGroupYear);
             // No capitalization needed for year
@@ -789,24 +727,6 @@
 
         // --- Core Functions ---
 
-        /**
-         * Detects if the current device is likely a mobile device.
-         * @returns {boolean} True if mobile, false otherwise.
-         */
-        function isMobileDevice() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            // Basic check for common mobile keywords in user agent
-            if (/android|ipad|iphone|ipod|blackberry|windows phone/i.test(userAgent)) {
-                return true;
-            }
-            // Check for touch events (less reliable on desktop touchscreens, but good for general mobile detection)
-            if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0) {
-                return true;
-            }
-            // Fallback for smaller screens (can be inaccurate for tablets in landscape)
-            return window.innerWidth <= 768; // Common breakpoint for mobile
-        }
-
         function resetApp() {
             uploadedFiles = [];
             renamedFilesData = [];
@@ -827,6 +747,7 @@
             colorInput.value = '';
             typeSelect.value = '';
             editionSelect.value = '';
+            channelSelect.value = ''; // Reset new channel field
             yearInput.value = '';
 
             // Clear any error messages
@@ -864,6 +785,7 @@
                 color: '',
                 type: '',
                 edition: '',
+                channel: '', // Initialize new channel property
                 year: ''
             }));
             renamedFilesUl.innerHTML = ''; // Clear preview
@@ -919,6 +841,7 @@
                         formData.color,
                         formData.type,
                         formData.edition,
+                        formData.channel, // Pass new channel field
                         formData.year
                     );
                     return { originalFile: file, newName: newName };
@@ -1112,6 +1035,30 @@
                         <input type="text" id="individualColor_${index}" data-field="color" placeholder="e.g., Black (Optional)">
                     </div>
                     <div class="form-group">
+                        <label for="individualEdition_${index}">Edition (Optional):</label>
+                        <select id="individualEdition_${index}" data-field="edition">
+                            <option value="">None</option>
+                            <option value="Backroom">Backroom</option>
+                            <option value="Collection">Collection</option>
+                            <option value="LE">Limited Edition</option>
+                            <option value="SE">Special Edition</option>
+                            <option value="Vintage">Vintage</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="individualChannel_${index}">Channel (Optional):</label>
+                        <select id="individualChannel_${index}" data-field="channel">
+                            <option value="">None</option>
+                            <option value="CarouselBanner">Carousel Banner</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="SmallBanner">Small Banner</option>
+                            <option value="TikTok">TikTok</option>
+                            <option value="Twitter">Twitter</option>
+                            <option value="X">X</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="individualType_${index}">Type:</label>
                         <select id="individualType_${index}" data-field="type">
                             <option value="">Select Type</option>
@@ -1138,17 +1085,6 @@
                         <span class="error-message">Type is required.</span>
                     </div>
                     <div class="form-group">
-                        <label for="individualEdition_${index}">Edition (Optional):</label>
-                        <select id="individualEdition_${index}" data-field="edition">
-                            <option value="">None</option>
-                            <option value="Backroom">Backroom</option>
-                            <option value="Collection">Collection</option>
-                            <option value="LE">Limited Edition</option>
-                            <option value="SE">Special Edition</option>
-                            <option value="Vintage">Vintage</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label for="individualYear_${index}">Year:</label>
                         <input type="text" id="individualYear_${index}" data-field="year" placeholder="e.g., 2024" maxlength="4">
                         <span class="error-message">Year is required and must be a 4-digit number.</span>
@@ -1173,6 +1109,7 @@
                     sectionDiv.querySelector('[data-field="color"]').value = formData.color;
                     sectionDiv.querySelector('[data-field="type"]').value = formData.type;
                     sectionDiv.querySelector('[data-field="edition"]').value = formData.edition;
+                    sectionDiv.querySelector('[data-field="channel"]').value = formData.channel; // Populate new channel field
                     sectionDiv.querySelector('[data-field="year"]').value = formData.year;
                 }
 
@@ -1198,6 +1135,9 @@
                 sectionDiv.querySelector('[data-field="edition"]').addEventListener('input', (e) => {
                     e.target.value = capitalizeWordsLiveInput(e.target.value);
                     individualFormData[index].edition = e.target.value; // Update data
+                });
+                sectionDiv.querySelector('[data-field="channel"]').addEventListener('change', (e) => { // New event listener for channel
+                    individualFormData[index].channel = e.target.value; // Update data
                 });
                 sectionDiv.querySelector('[data-field="year"]').addEventListener('input', (e) => {
                     clearError(e.target.closest('.form-group'));
@@ -1278,6 +1218,7 @@
             sectionElement.querySelector('[data-field="color"]').value = '';
             sectionElement.querySelector('[data-field="type"]').value = '';
             sectionElement.querySelector('[data-field="edition"]').value = '';
+            sectionElement.querySelector('[data-field="channel"]').value = ''; // Clear new channel field
             sectionElement.querySelector('[data-field="year"]').value = '';
 
             // Clear corresponding data in individualFormData
@@ -1287,6 +1228,7 @@
                 color: '',
                 type: '',
                 edition: '',
+                channel: '', // Clear new channel property in data
                 year: ''
             };
 
@@ -1300,7 +1242,7 @@
 
 
         // Helper function to generate file name from individual inputs
-        function generateFileNameFromIndividualInputs(file, brand, model, color, type, edition, year) {
+        function generateFileNameFromIndividualInputs(file, brand, model, color, type, edition, channel, year) {
             const parts = [
                 sanitizeFileNameForOutput(brand),
                 sanitizeFileNameForOutput(model)
@@ -1310,11 +1252,14 @@
                 parts.push(sanitizeFileNameForOutput(color));
             }
             
-            parts.push(sanitizeFileNameForOutput(type));
-
             if (edition) {
                 parts.push(sanitizeFileNameForOutput(edition));
             }
+            if (channel) { // Add channel if present
+                parts.push(sanitizeFileNameForOutput(channel));
+            }
+            parts.push(sanitizeFileNameForOutput(type));
+            
             parts.push(year);
 
             let newName = parts.join('-');
@@ -1385,6 +1330,7 @@
             const color = colorInput.value.trim();
             const type = typeSelect.value.trim();
             const edition = editionSelect.value.trim();
+            const channel = channelSelect.value.trim(); // Get new channel value
             const year = yearInput.value.trim();
 
             const parts = [
@@ -1396,11 +1342,15 @@
                 parts.push(sanitizeFileNameForOutput(color));
             }
             
-            parts.push(sanitizeFileNameForOutput(type));
-
+            // Reordered: edition comes before channel, then type
             if (edition) {
                 parts.push(sanitizeFileNameForOutput(edition));
             }
+            if (channel) { // Add channel if present
+                parts.push(sanitizeFileNameForOutput(channel));
+            }
+            parts.push(sanitizeFileNameForOutput(type));
+            
             parts.push(year);
 
             let newName = parts.join('-');
@@ -1512,8 +1462,8 @@
             }
         }
 
-        // For desktop users: direct individual downloads
-        async function downloadIndividualFilesDesktop() {
+        // Reverted to original function name for direct individual downloads
+        async function downloadRenamedFilesIndividually() {
             if (renamedFilesData.length === 0) {
                 alert('No files to download. Please process images first.');
                 return;
@@ -1539,7 +1489,7 @@
             }
 
             if (successfulDownloads > 0) {
-                alert(`Initiated download for ${successfulDownloads} file(s). Please check your browser's download folder.`);
+                alert(`Initiated download for ${successfulDownloads} file(s). Your browser will handle the download for each, which may automatically save to your device\'s Downloads folder or prompt you for a location.`);
             } else {
                 alert('No files were successfully downloaded. Please check the console for errors.');
             }
@@ -1548,29 +1498,6 @@
             downloadAllBtn.disabled = false;
             downloadIndividualBtn.disabled = false;
             downloadIndividualBtn.textContent = 'Download Files Individually';
-        }
-
-        // For mobile users: show modal with individual download links
-        function showIndividualDownloadLinks() {
-            if (renamedFilesData.length === 0) {
-                alert('No files to download. Please process images first.');
-                return;
-            }
-
-            individualDownloadLinksContainer.innerHTML = ''; // Clear previous links
-            renamedFilesData.forEach(data => {
-                if (data.blob) {
-                    const url = URL.createObjectURL(data.blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = data.newName; // Suggests the file name
-                    link.textContent = `Download: ${data.newName}`;
-                    link.target = '_blank'; // Open in new tab/window, sometimes helps on mobile
-                    individualDownloadLinksContainer.appendChild(link);
-                }
-            });
-
-            individualDownloadModal.style.display = 'flex'; // Show the modal
         }
 
         // Initialize display states on load
