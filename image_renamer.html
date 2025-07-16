@@ -465,6 +465,51 @@
                 max-width: none; /* Remove max-width constraint */
             }
         }
+
+        /* Specific styles for the individual download links modal */
+        #individualDownloadModal .modal-content {
+            max-height: 80vh; /* Limit height to prevent modal from overflowing screen */
+            overflow-y: auto; /* Enable scrolling within the modal if content is long */
+        }
+        #individualDownloadLinks {
+            margin-top: 20px;
+            max-height: 400px; /* Limit height for the links container */
+            overflow-y: auto; /* Make the links container scrollable */
+            padding-right: 10px; /* Add some padding for the scrollbar */
+        }
+        #individualDownloadLinks a {
+            display: block;
+            background-color: #e9ecef;
+            color: #007bff;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            text-decoration: none;
+            text-align: left;
+            word-break: break-all;
+            transition: background-color 0.2s ease;
+        }
+        #individualDownloadLinks a:hover {
+            background-color: #dbeeff;
+        }
+        #individualDownloadModal .modal-footer {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        #closeIndividualDownloadModalBtn {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        #closeIndividualDownloadModalBtn:hover {
+            background-color: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -507,7 +552,7 @@
                     <option value="LeatherCase">Leather Case</option>
                     <option value="MechanicalPencil">Mechanical Pencil</option>
                     <option value="Notebook">Notebook</option>
-                    <option value="Pad">Pad</p>
+                    <option value="Pad">Pad</option>
                     <option value="Paper">Paper</option>
                     <option value="Refill">Refill</option>
                     <option value="Rollerball">Rollerball</option>
@@ -582,6 +627,21 @@
         </div>
     </div>
 
+    <!-- New Modal for Individual File Downloads -->
+    <div id="individualDownloadModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeIndividualDownloadModalBtnTop">&times;</span>
+            <h2>Download Individual Files</h2>
+            <p>On mobile, browsers may require you to tap each link to download files individually.</p>
+            <div id="individualDownloadLinks">
+                <!-- Links will be inserted here dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button id="closeIndividualDownloadModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script>
@@ -624,10 +684,17 @@
         const modalDescription = document.getElementById('modalDescription');
         const modalConfirmGroupBtn = document.getElementById('modalConfirmGroupBtn');
         const modalSkipGroupBtn = document.getElementById('modalSkipGroupBtn');
-        const closeModalBtn = document.querySelector('.close-button');
+        const closeModalBtn = document.querySelector('.close-button'); // For groupModal
         const selectAllFilesCheckbox = document.getElementById('selectAllFilesCheckbox'); // Not used in new flow
         const groupSelectAllOption = document.getElementById('groupSelectAllOption'); // Not used in new flow
         const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+        // New individual download modal elements
+        const individualDownloadModal = document.getElementById('individualDownloadModal');
+        const individualDownloadLinksContainer = document.getElementById('individualDownloadLinks');
+        const closeIndividualDownloadModalBtn = document.getElementById('closeIndividualDownloadModalBtn');
+        const closeIndividualDownloadModalBtnTop = document.getElementById('closeIndividualDownloadModalBtnTop');
+
 
         // References to form group elements and error messages for validation (for main form)
         const formGroupBrandName = document.getElementById('formGroupBrandName');
@@ -644,12 +711,27 @@
         imageUpload.addEventListener('change', handleFileSelect);
         processFilesBtn.addEventListener('click', processFiles);
         downloadAllBtn.addEventListener('click', downloadAllRenamedFiles);
-        downloadIndividualBtn.addEventListener('click', downloadRenamedFilesIndividually); // New listener
+        // Conditional event listener for individual download button
+        downloadIndividualBtn.addEventListener('click', () => {
+            if (isMobileDevice()) {
+                showIndividualDownloadLinks();
+            } else {
+                downloadIndividualFilesDesktop();
+            }
+        });
         resetBtn.addEventListener('click', resetApp); // Reset button listener
-        closeModalBtn.addEventListener('click', () => groupModal.style.display = 'none');
+        
+        // Event listeners for modals
+        closeModalBtn.addEventListener('click', () => groupModal.style.display = 'none'); // For groupModal
+        closeIndividualDownloadModalBtn.addEventListener('click', () => individualDownloadModal.style.display = 'none'); // For individual download modal
+        closeIndividualDownloadModalBtnTop.addEventListener('click', () => individualDownloadModal.style.display = 'none'); // For individual download modal (top X)
+
         window.addEventListener('click', (event) => {
             if (event.target == groupModal) {
                 groupModal.style.display = 'none';
+            }
+            if (event.target == individualDownloadModal) {
+                individualDownloadModal.style.display = 'none';
             }
         });
 
@@ -706,6 +788,24 @@
         });
 
         // --- Core Functions ---
+
+        /**
+         * Detects if the current device is likely a mobile device.
+         * @returns {boolean} True if mobile, false otherwise.
+         */
+        function isMobileDevice() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            // Basic check for common mobile keywords in user agent
+            if (/android|ipad|iphone|ipod|blackberry|windows phone/i.test(userAgent)) {
+                return true;
+            }
+            // Check for touch events (less reliable on desktop touchscreens, but good for general mobile detection)
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0) {
+                return true;
+            }
+            // Fallback for smaller screens (can be inaccurate for tablets in landscape)
+            return window.innerWidth <= 768; // Common breakpoint for mobile
+        }
 
         function resetApp() {
             uploadedFiles = [];
@@ -1412,7 +1512,8 @@
             }
         }
 
-        async function downloadRenamedFilesIndividually() {
+        // For desktop users: direct individual downloads
+        async function downloadIndividualFilesDesktop() {
             if (renamedFilesData.length === 0) {
                 alert('No files to download. Please process images first.');
                 return;
@@ -1438,7 +1539,7 @@
             }
 
             if (successfulDownloads > 0) {
-                alert(`Initiated download for ${successfulDownloads} file(s). Your browser will handle the download for each, which may automatically save to your device\'s Downloads folder or prompt you for a location.`);
+                alert(`Initiated download for ${successfulDownloads} file(s). Please check your browser's download folder.`);
             } else {
                 alert('No files were successfully downloaded. Please check the console for errors.');
             }
@@ -1447,6 +1548,29 @@
             downloadAllBtn.disabled = false;
             downloadIndividualBtn.disabled = false;
             downloadIndividualBtn.textContent = 'Download Files Individually';
+        }
+
+        // For mobile users: show modal with individual download links
+        function showIndividualDownloadLinks() {
+            if (renamedFilesData.length === 0) {
+                alert('No files to download. Please process images first.');
+                return;
+            }
+
+            individualDownloadLinksContainer.innerHTML = ''; // Clear previous links
+            renamedFilesData.forEach(data => {
+                if (data.blob) {
+                    const url = URL.createObjectURL(data.blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = data.newName; // Suggests the file name
+                    link.textContent = `Download: ${data.newName}`;
+                    link.target = '_blank'; // Open in new tab/window, sometimes helps on mobile
+                    individualDownloadLinksContainer.appendChild(link);
+                }
+            });
+
+            individualDownloadModal.style.display = 'flex'; // Show the modal
         }
 
         // Initialize display states on load
