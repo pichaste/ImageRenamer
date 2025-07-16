@@ -352,15 +352,40 @@
         }
 
         /* Style for the Download All button when placed in fileList */
-        #downloadAllBtn.in-file-list {
-            margin-top: 20px; /* Space from the last list item */
-            width: 100%; /* Make it full width */
+        #downloadButtonsContainer {
+            text-align: center;
+            margin-top: 20px;
+            display: flex; /* Use flexbox for button alignment */
+            justify-content: center; /* Center buttons horizontally */
+            gap: 10px; /* Space between buttons */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+
+        #downloadButtonsContainer button {
             padding: 12px 20px; /* Larger padding */
+            font-size: 1.1rem; /* Larger font */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            max-width: 300px; /* Limit max width for larger screens */
+        }
+
+        #downloadAllBtn {
             background-color: #007bff; /* Blue color for download */
             color: white; /* White text */
         }
-        #downloadAllBtn.in-file-list:hover {
+        #downloadAllBtn:hover {
             background-color: #0056b3; /* Darker blue on hover */
+        }
+
+        #downloadIndividualBtn {
+            background-color: #28a745; /* Green color for individual download */
+            color: white;
+        }
+        #downloadIndividualBtn:hover {
+            background-color: #218838;
         }
 
 
@@ -379,13 +404,22 @@
                 width: 95%;
                 padding: 15px;
             }
+            #downloadButtonsContainer {
+                flex-direction: column; /* Stack buttons vertically on small screens */
+                align-items: center;
+            }
+            #downloadButtonsContainer button {
+                width: 100%; /* Full width for stacked buttons */
+                max-width: none; /* Remove max-width constraint */
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Image Renamer</h1>
-        <p><center>Upload your images, define the naming convention, and download them with new names!</center></p>
+        <!-- <p style="text-align: center;">Upload your images, define the naming convention, and download them with new names!</p> -->
+        <p style="text-align: center;">Upload your files, rename, and download them with new names!</p>
 
         <!-- Main form fields - initially hidden -->
         <div class="form-section hidden" id="mainFormSection">
@@ -421,7 +455,7 @@
                     <option value="LeatherCase">Leather Case</option>
                     <option value="MechanicalPencil">Mechanical Pencil</option>
                     <option value="Notebook">Notebook</option>
-                    <option value="Pad">Pad</option>
+                    <option value="Pad">Pad</p>
                     <option value="Paper">Paper</option>
                     <option value="Refill">Refill</option>
                     <option value="Rollerball">Rollerball</option>
@@ -467,7 +501,10 @@
             <h2>Renamed Files Preview:</h2>
             <ul id="renamedFilesUl">
                 </ul>
-            <button id="downloadAllBtn" class="in-file-list" style="display: none;">Download All Renamed Files</button> <!-- Moved button -->
+            <div id="downloadButtonsContainer" style="display: none;">
+                <button id="downloadAllBtn">Download All Renamed Files (ZIP)</button>
+                <button id="downloadIndividualBtn">Download Files Individually</button>
+            </div>
         </div>
     </div>
 
@@ -475,7 +512,7 @@
         <div class="modal-content">
             <span class="close-button">&times;</span>
             <h2 id="modalTitle">Group Selection</h2>
-            <p id="modalDescription">Select files that belong to the *same group* and will share the "1 of X" naming convention. Files not selected will be processed individually.</p>
+            <p id="modalDescription" style="text-align: center;">Choose an option to proceed with renaming your uploaded images.</p>
             
             <!-- Select All option for grouping (initially hidden, shown only in specific grouping mode if needed) -->
             <div class="select-all-option" id="groupSelectAllOption" style="display: none;">
@@ -515,12 +552,16 @@
         // UI elements
         const imageUpload = document.getElementById('imageUpload');
         const processFilesBtn = document.getElementById('processFilesBtn');
-        const downloadAllBtn = document.getElementById('downloadAllBtn'); // Moved to fileList section
-        const resetBtn = document.getElementById('resetBtn'); // Now "Start Over"
         const renamedFilesUl = document.getElementById('renamedFilesUl');
         const dropAreaLabel = document.getElementById('dropAreaLabel');
         const mainButtonGroup = document.getElementById('mainButtonGroup'); // Reference to the main button group
         const individualFileSectionsContainer = document.getElementById('individualFileSections'); // Container for individual file fields
+
+        // Download buttons and container
+        const downloadButtonsContainer = document.getElementById('downloadButtonsContainer');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const downloadIndividualBtn = document.getElementById('downloadIndividualBtn');
+        const resetBtn = document.getElementById('resetBtn'); // Now "Start Over"
 
         // Modal elements
         const groupModal = document.getElementById('groupModal');
@@ -549,6 +590,7 @@
         imageUpload.addEventListener('change', handleFileSelect);
         processFilesBtn.addEventListener('click', processFiles);
         downloadAllBtn.addEventListener('click', downloadAllRenamedFiles);
+        downloadIndividualBtn.addEventListener('click', downloadRenamedFilesIndividually); // New listener
         resetBtn.addEventListener('click', resetApp); // Reset button listener
         closeModalBtn.addEventListener('click', () => groupModal.style.display = 'none');
         window.addEventListener('click', (event) => {
@@ -621,7 +663,7 @@
             individualFileSectionsContainer.style.display = 'none';
             individualFileSectionsContainer.innerHTML = ''; // Clear dynamically added fields
             mainButtonGroup.style.display = 'none';
-            downloadAllBtn.style.display = 'none'; // Hide download button
+            downloadButtonsContainer.style.display = 'none'; // Hide download buttons container
             document.getElementById('fileList').style.display = 'none'; // Hide preview section
             
             // Reset main form fields
@@ -662,7 +704,7 @@
             uploadedFiles = Array.from(event.target.files);
             renamedFilesData = []; // Clear previous data
             renamedFilesUl.innerHTML = ''; // Clear preview
-            downloadAllBtn.style.display = 'none'; // Hide download button until processed
+            downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
             document.getElementById('fileList').style.display = 'none'; // Hide preview section
 
             if (uploadedFiles.length > 0) {
@@ -826,7 +868,7 @@
             individualFileSectionsContainer.style.display = 'none'; // Hide individual sections
             individualFileSectionsContainer.innerHTML = ''; // Clear any previous individual fields
             processFilesBtn.textContent = 'Process & Show Names'; // Ensure button text is correct
-            downloadAllBtn.style.display = 'none'; // Hide download button until processed
+            downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
             document.getElementById('fileList').style.display = 'none'; // Hide preview section
         }
 
@@ -836,7 +878,7 @@
             individualFileSectionsContainer.style.display = 'block'; // Show individual sections container
             individualFileSectionsContainer.innerHTML = ''; // Clear previous individual fields
             processFilesBtn.textContent = 'Process & Show Names'; // Ensure button text is correct
-            downloadAllBtn.style.display = 'none'; // Hide download button until processed
+            downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
             document.getElementById('fileList').style.display = 'none'; // Hide preview section
 
             uploadedFiles.forEach((file, index) => {
@@ -1062,14 +1104,12 @@
                     console.error("Error reading file:", file.name, error);
                     alert(`Could not process file ${file.name}. Please try again.`);
                     renamedFilesData = []; // Clear if any error
-                    downloadAllBtn.style.display = 'none';
+                    downloadButtonsContainer.style.display = 'none';
                     return;
                 }
             }
             if (renamedFilesData.length > 0) {
-                // Append the download button to the fileList section
-                document.getElementById('fileList').appendChild(downloadAllBtn);
-                downloadAllBtn.style.display = 'block';
+                downloadButtonsContainer.style.display = 'flex'; // Show the download buttons container
             }
         }
 
@@ -1190,6 +1230,7 @@
             try {
                 processFilesBtn.disabled = true;
                 downloadAllBtn.disabled = true;
+                downloadIndividualBtn.disabled = true; // Disable other download button
                 downloadAllBtn.textContent = 'Generating ZIP...';
 
                 const content = await zip.generateAsync({ type: "blob" });
@@ -1201,8 +1242,46 @@
             } finally {
                 processFilesBtn.disabled = false;
                 downloadAllBtn.disabled = false;
-                downloadAllBtn.textContent = 'Download All Renamed Files';
+                downloadIndividualBtn.disabled = false; // Re-enable other download button
+                downloadAllBtn.textContent = 'Download All Renamed Files (ZIP)';
             }
+        }
+
+        async function downloadRenamedFilesIndividually() {
+            if (renamedFilesData.length === 0) {
+                alert('No files to download. Please process images first.');
+                return;
+            }
+
+            processFilesBtn.disabled = true;
+            downloadAllBtn.disabled = true;
+            downloadIndividualBtn.disabled = true;
+            downloadIndividualBtn.textContent = 'Downloading...';
+
+            let successfulDownloads = 0;
+            for (const data of renamedFilesData) {
+                if (data.blob) {
+                    try {
+                        saveAs(data.blob, data.newName);
+                        successfulDownloads++;
+                    } catch (error) {
+                        console.error(`Error downloading ${data.newName}:`, error);
+                    }
+                } else {
+                    console.error(`Blob for ${data.newName} is missing. Cannot download.`);
+                }
+            }
+
+            if (successfulDownloads > 0) {
+                alert(`Initiated download for ${successfulDownloads} file(s). Please check your browser's download folder.`);
+            } else {
+                alert('No files were successfully downloaded. Please check the console for errors.');
+            }
+
+            processFilesBtn.disabled = false;
+            downloadAllBtn.disabled = false;
+            downloadIndividualBtn.disabled = false;
+            downloadIndividualBtn.textContent = 'Download Files Individually';
         }
 
         // Initialize display states on load
