@@ -211,46 +211,21 @@
             text-decoration: none;
             cursor: pointer;
         }
-        .modal-file-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            border: 1px solid #eee;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .modal-file-list label {
-            display: block;
-            margin-bottom: 8px;
-            padding: 8px;
-            background-color: #eef;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px; /* Spacing between checkbox/text and input */
-        }
-        .modal-file-list label:hover {
-            background-color: #dde;
-        }
-        .modal-file-list input[type="checkbox"] {
-            margin-right: 10px;
-        }
-        .modal-file-list input[type="text"] { /* Style for individual rename inputs */
-            flex-grow: 1;
-            padding: 6px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 0.95rem;
-        }
+        /* Removed .modal-file-list as the element is being removed */
         .modal-footer {
             text-align: center; /* Centered buttons */
             margin-top: 15px; /* Spacing for the select all option */
             display: flex; /* Use flexbox for button alignment */
-            justify-content: center; /* Center buttons horizontally */
-            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            flex-direction: column; /* Stack buttons vertically by default */
+            align-items: center; /* Center items horizontally when stacked */
             gap: 10px; /* Space between buttons */
+        }
+        .modal-footer .button-row { /* New class for grouping blue buttons */
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px; /* Horizontal space between these buttons */
+            width: 100%; /* Take full width to center its contents */
         }
         .modal-footer button {
             padding: 10px 20px;
@@ -258,6 +233,8 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 1rem;
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            max-width: 250px; /* Limit max width for larger screens */
         }
         #modalConfirmGroupBtn {
             background-color: #007bff; /* Primary blue */
@@ -269,7 +246,6 @@
         #modalSkipGroupBtn {
             background-color: #007bff; /* Changed to primary blue */
             color: white;
-            /* margin-left: 10px; Removed as gap handles spacing */
         }
         #modalSkipGroupBtn:hover {
             background-color: #0056b3; /* Darker blue on hover */
@@ -277,7 +253,8 @@
         #modalCancelBtn {
             background-color: #6c757d; /* Grey for cancel */
             color: white;
-            /* margin-left: 10px; Removed as gap handles spacing */
+            margin-top: 10px; /* Add vertical space from the row above */
+            /* Reverted to original size, so no explicit width/max-width */
         }
         #modalCancelBtn:hover {
             background-color: #5a6268;
@@ -309,6 +286,16 @@
             border-radius: 5px;
             background-color: #f0f0f0; /* Lighter grey background */
             margin-bottom: 20px; /* Space between each file's section */
+            position: relative; /* Needed for absolute positioning of move buttons */
+            cursor: grab; /* Indicate draggable */
+            transition: opacity 0.2s ease, border-color 0.2s ease;
+        }
+        .individual-file-section.dragging {
+            opacity: 0.5; /* Visual feedback for dragging */
+            border: 2px dashed #007bff; /* Dashed border for dragging */
+        }
+        .individual-file-section.drag-over-target {
+            border: 2px solid #007bff; /* Highlight potential drop target */
         }
         .individual-file-section h3 {
             margin: 0; /* Adjust margin as it's now inside flex container */
@@ -363,6 +350,29 @@
             background-color: #d32f2f;
         }
 
+        /* New style for the drag handle */
+        .drag-handle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            cursor: grab;
+            color: #888;
+            font-size: 1.2rem;
+            line-height: 1;
+            padding: 5px;
+            border-radius: 3px;
+            background-color: rgba(0,0,0,0.05);
+            transition: background-color 0.2s ease;
+            z-index: 1; /* Ensure it's above other content for clicking */
+        }
+        .drag-handle:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+        .drag-handle svg {
+            display: block; /* Remove extra space below SVG */
+        }
+
+
         /* Style for the Download All button when placed in fileList */
         #downloadButtonsContainer {
             text-align: center;
@@ -411,6 +421,15 @@
 
 
         /* Responsive adjustments */
+        @media (min-width: 769px) { /* Apply horizontal layout for larger screens */
+            .modal-footer {
+                flex-direction: column; /* Keep buttons stacked for clarity */
+            }
+            .modal-footer .button-row {
+                width: auto; /* Allow row to shrink to content */
+            }
+        }
+
         @media (max-width: 768px) {
             .form-section,
             .individual-file-section .form-fields-grid { /* Apply to both main and individual grids */
@@ -436,6 +455,7 @@
             .modal-footer button {
                 flex-grow: 1; /* Allow modal buttons to grow and fill space */
                 width: 100%; /* Full width for stacked buttons */
+                max-width: none; /* Remove max-width constraint */
             }
         }
     </style>
@@ -545,13 +565,11 @@
                 <label for="selectAllFilesCheckbox">Select All</label>
             </div>
 
-            <div class="modal-file-list" id="modalFileList">
-                <!-- File list populated by JS -->
-            </div>
             <div class="modal-footer">
-                <!-- Buttons dynamically changed by JS -->
-                <button id="modalConfirmGroupBtn">Process All as a Single Group</button>
-                <button id="modalSkipGroupBtn">Rename Each File Individually</button>
+                <div class="button-row">
+                    <button id="modalConfirmGroupBtn">Rename all as a Group</button> <!-- Old: Process All as a Single Group -->
+                    <button id="modalSkipGroupBtn">Rename Each Individually</button> <!-- Old: Rename Each File Individually -->
+                </div>
                 <button id="modalCancelBtn" style="display: none;">Cancel</button> 
             </div>
         </div>
@@ -564,6 +582,10 @@
         let uploadedFiles = [];
         let renamedFilesData = []; // Stores { originalFile: File, newName: "...", blob: Blob }
         let currentProcessingMode = ''; // 'group', 'individual'
+        let draggedItemIndex = -1; // To store the index of the currently dragged item
+
+        // New array to store form data for individual files
+        let individualFormData = []; // Stores { brand: '', model: '', ... } for each file
 
         // Main form elements
         const mainFormSection = document.getElementById('mainFormSection');
@@ -592,7 +614,6 @@
         const groupModal = document.getElementById('groupModal');
         const modalTitle = document.getElementById('modalTitle');
         const modalDescription = document.getElementById('modalDescription');
-        const modalFileList = document.getElementById('modalFileList'); // Not used in new flow for individual renaming
         const modalConfirmGroupBtn = document.getElementById('modalConfirmGroupBtn');
         const modalSkipGroupBtn = document.getElementById('modalSkipGroupBtn');
         const closeModalBtn = document.querySelector('.close-button');
@@ -661,7 +682,7 @@
             // No capitalization needed for year
         });
 
-        // Drag and Drop functionality
+        // Drag and Drop functionality for file input
         dropAreaLabel.addEventListener('dragover', (event) => {
             event.preventDefault();
             dropAreaLabel.classList.add('drag-over');
@@ -681,6 +702,7 @@
         function resetApp() {
             uploadedFiles = [];
             renamedFilesData = [];
+            individualFormData = []; // Reset individual form data
             renamedFilesUl.innerHTML = '';
             
             // Hide all dynamic sections
@@ -728,6 +750,14 @@
         function handleFileSelect(event) {
             uploadedFiles = Array.from(event.target.files);
             renamedFilesData = []; // Clear previous data
+            individualFormData = uploadedFiles.map(file => ({ // Initialize individual form data
+                brand: '',
+                model: '',
+                color: '',
+                type: '',
+                edition: '',
+                year: ''
+            }));
             renamedFilesUl.innerHTML = ''; // Clear preview
             downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
             document.getElementById('fileList').style.display = 'none'; // Hide preview section
@@ -771,26 +801,19 @@
                 // Process all uploaded files as a single group
                 processAndDisplayNames(uploadedFiles, true);
             } else if (currentProcessingMode === 'individual') {
-                // Collect data from individual fields and process
-                const individualFileForms = individualFileSectionsContainer.querySelectorAll('.individual-file-section');
-                let filesToProcessWithCustomNames = [];
-
-                individualFileForms.forEach((section, index) => {
-                    const originalFile = uploadedFiles[index]; // Get the corresponding original file
-                    const brand = section.querySelector('[data-field="brandName"]').value.trim();
-                    const model = section.querySelector('[data-field="modelName"]').value.trim();
-                    const color = section.querySelector('[data-field="color"]').value.trim();
-                    const type = section.querySelector('[data-field="type"]').value.trim();
-                    const edition = section.querySelector('[data-field="edition"]').value.trim();
-                    const year = section.querySelector('[data-field="year"]').value.trim();
-
-                    // Generate name based on these individual inputs
-                    const newName = generateFileNameFromIndividualInputs(originalFile, brand, model, color, type, edition, year);
-                    
-                    filesToProcessWithCustomNames.push({
-                        originalFile: originalFile,
-                        newName: newName // This newName is already finalized
-                    });
+                // Use data directly from individualFormData
+                const filesToProcessWithCustomNames = uploadedFiles.map((file, index) => {
+                    const formData = individualFormData[index];
+                    const newName = generateFileNameFromIndividualInputs(
+                        file,
+                        formData.brand,
+                        formData.model,
+                        formData.color,
+                        formData.type,
+                        formData.edition,
+                        formData.year
+                    );
+                    return { originalFile: file, newName: newName };
                 });
                 processAndDisplayNames(filesToProcessWithCustomNames, false, true); // Process as individual, from custom names
             }
@@ -820,12 +843,9 @@
             let isValid = true;
             const individualFileForms = individualFileSectionsContainer.querySelectorAll('.individual-file-section');
 
-            individualFileForms.forEach(section => {
-                const brandInput = section.querySelector('[data-field="brandName"]');
-                const modelInput = section.querySelector('[data-field="modelName"]');
-                const typeSelect = section.querySelector('[data-field="type"]');
-                const yearInput = section.querySelector('[data-field="year"]');
-
+            individualFileForms.forEach((section, index) => {
+                const formData = individualFormData[index]; // Get data from our JS array
+                
                 // Clear previous errors for this section
                 section.querySelectorAll('.form-group.error').forEach(group => {
                     group.classList.remove('error');
@@ -833,25 +853,26 @@
                     if (errorMessage) errorMessage.style.display = 'none';
                 });
 
-                if (brandInput.value.trim() === '') {
-                    brandInput.closest('.form-group').classList.add('error');
-                    brandInput.closest('.form-group').querySelector('.error-message').style.display = 'block';
+                if (formData.brand.trim() === '') {
+                    section.querySelector('[data-field="brandName"]').closest('.form-group').classList.add('error');
+                    section.querySelector('[data-field="brandName"]').closest('.form-group').querySelector('.error-message').style.display = 'block';
                     isValid = false;
                 }
-                if (modelInput.value.trim() === '') {
-                    modelInput.closest('.form-group').classList.add('error');
-                    modelInput.closest('.form-group').querySelector('.error-message').style.display = 'block';
+                if (formData.model.trim() === '') {
+                    section.querySelector('[data-field="modelName"]').closest('.form-group').classList.add('error');
+                    section.querySelector('[data-field="modelName"]').closest('.form-group').querySelector('.error-message').style.display = 'block';
                     isValid = false;
                 }
-                if (typeSelect.value.trim() === '') {
-                    typeSelect.closest('.form-group').classList.add('error');
-                    typeSelect.closest('.form-group').querySelector('.error-message').style.display = 'block';
+                if (formData.type.trim() === '') {
+                    section.querySelector('[data-field="type"]').closest('.form-group').classList.add('error');
+                    section.querySelector('[data-field="type"]').closest('.form-group').querySelector('.error-message').style.display = 'block';
                     isValid = false;
                 }
-                const year = yearInput.value.trim();
+                const year = formData.year.trim();
                 if (year === '' || year.length !== 4 || isNaN(year)) {
-                    yearInput.closest('.form-group').classList.add('error');
-                    const yearErrorMessage = yearInput.closest('.form-group').querySelector('.error-message');
+                    const yearInputElem = section.querySelector('[data-field="year"]');
+                    yearInputElem.closest('.form-group').classList.add('error');
+                    const yearErrorMessage = yearInputElem.closest('.form-group').querySelector('.error-message');
                     yearErrorMessage.style.display = 'block';
                     yearErrorMessage.textContent = 'Year is required and must be a 4-digit number.';
                     isValid = false;
@@ -873,17 +894,15 @@
             modalTitle.textContent = 'How would you like to process these files?';
             modalDescription.textContent = 'Choose an option to proceed with renaming your uploaded images.';
             
-            modalConfirmGroupBtn.textContent = 'Process All as a Single Group';
+            modalConfirmGroupBtn.textContent = 'Rename all as a Group'; // Updated text
             modalConfirmGroupBtn.classList.remove('individual-mode');
             modalConfirmGroupBtn.style.display = 'inline-block';
 
-            modalSkipGroupBtn.textContent = 'Rename Each File Individually';
+            modalSkipGroupBtn.textContent = 'Rename Each Individually'; // Updated text
             modalSkipGroupBtn.style.display = 'inline-block';
 
             modalCancelBtn.style.display = 'inline-block'; // Show cancel button
             groupSelectAllOption.style.display = 'none'; // Hide select all for this choice
-            modalFileList.innerHTML = ''; // Clear file list content
-
             groupModal.style.display = 'flex'; // Show the modal
         }
 
@@ -901,6 +920,10 @@
             currentProcessingMode = 'individual';
             mainFormSection.classList.add('hidden'); // Hide main form
             individualFileSectionsContainer.style.display = 'block'; // Show individual sections container
+            renderIndividualNamingFields(); // Call the new render function
+        }
+
+        function renderIndividualNamingFields() {
             individualFileSectionsContainer.innerHTML = ''; // Clear previous individual fields
             processFilesBtn.textContent = 'Rename Files'; // Ensure button text is correct
             downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
@@ -909,6 +932,29 @@
             uploadedFiles.forEach((file, index) => {
                 const sectionDiv = document.createElement('div');
                 sectionDiv.classList.add('individual-file-section');
+                sectionDiv.setAttribute('data-index', index); // Add data-index for easy reference
+                sectionDiv.draggable = true; // Make it draggable
+
+                // Add drag and drop event listeners to the sectionDiv
+                sectionDiv.addEventListener('dragstart', handleDragStart);
+                sectionDiv.addEventListener('dragover', handleDragOver);
+                sectionDiv.addEventListener('dragleave', handleDragLeave);
+                sectionDiv.addEventListener('drop', handleDrop);
+                sectionDiv.addEventListener('dragend', handleDragEnd);
+
+                // Add the drag handle
+                const dragHandle = document.createElement('div');
+                dragHandle.classList.add('drag-handle');
+                // Using an SVG for a cleaner drag handle icon
+                dragHandle.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                `;
+                sectionDiv.appendChild(dragHandle);
+
 
                 // Create the header with image and file name
                 const fileHeaderDiv = document.createElement('div');
@@ -939,7 +985,6 @@
                 } else {
                     imgPreview.style.display = 'none'; // Hide image if not an image file
                 }
-
 
                 const formFieldsGridDiv = document.createElement('div');
                 formFieldsGridDiv.classList.add('form-fields-grid');
@@ -1012,45 +1057,123 @@
 
                 individualFileSectionsContainer.appendChild(sectionDiv);
 
+                // Populate fields with existing data
+                const formData = individualFormData[index];
+                if (formData) {
+                    sectionDiv.querySelector('[data-field="brandName"]').value = formData.brand;
+                    sectionDiv.querySelector('[data-field="modelName"]').value = formData.model;
+                    sectionDiv.querySelector('[data-field="color"]').value = formData.color;
+                    sectionDiv.querySelector('[data-field="type"]').value = formData.type;
+                    sectionDiv.querySelector('[data-field="edition"]').value = formData.edition;
+                    sectionDiv.querySelector('[data-field="year"]').value = formData.year;
+                }
+
                 // Add event listeners for live capitalization and error clearing to these new fields
                 sectionDiv.querySelector('[data-field="brandName"]').addEventListener('input', (e) => {
                     clearError(e.target.closest('.form-group'));
                     e.target.value = capitalizeWordsLiveInput(e.target.value);
+                    individualFormData[index].brand = e.target.value; // Update data
                 });
                 sectionDiv.querySelector('[data-field="modelName"]').addEventListener('input', (e) => {
                     clearError(e.target.closest('.form-group'));
                     e.target.value = capitalizeWordsLiveInput(e.target.value);
+                    individualFormData[index].model = e.target.value; // Update data
                 });
                 sectionDiv.querySelector('[data-field="color"]').addEventListener('input', (e) => {
                     e.target.value = capitalizeWordsLiveInput(e.target.value);
+                    individualFormData[index].color = e.target.value; // Update data
                 });
                 sectionDiv.querySelector('[data-field="type"]').addEventListener('change', (e) => {
                     clearError(e.target.closest('.form-group'));
+                    individualFormData[index].type = e.target.value; // Update data
                 });
                 sectionDiv.querySelector('[data-field="edition"]').addEventListener('input', (e) => {
                     e.target.value = capitalizeWordsLiveInput(e.target.value);
+                    individualFormData[index].edition = e.target.value; // Update data
                 });
                 sectionDiv.querySelector('[data-field="year"]').addEventListener('input', (e) => {
                     clearError(e.target.closest('.form-group'));
-                    // No capitalization needed for year
+                    individualFormData[index].year = e.target.value; // Update data
                 });
 
                 // Add event listener for the new clear button
                 clearButton.addEventListener('click', (e) => {
                     const targetSection = e.target.closest('.individual-file-section');
-                    clearIndividualSectionFields(targetSection);
+                    clearIndividualSectionFields(targetSection, index); // Pass index to clear data
                 });
             });
         }
 
+        // --- Drag and Drop Handlers ---
+        function handleDragStart(e) {
+            draggedItemIndex = parseInt(e.target.dataset.index);
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedItemIndex); // Set data for drag operation
+            e.target.classList.add('dragging'); // Add dragging class for visual feedback
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Necessary to allow dropping
+            e.dataTransfer.dropEffect = 'move';
+            if (e.target.closest('.individual-file-section') && e.target.closest('.individual-file-section').dataset.index !== draggedItemIndex.toString()) {
+                e.target.closest('.individual-file-section').classList.add('drag-over-target');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.closest('.individual-file-section')) {
+                e.target.closest('.individual-file-section').classList.remove('drag-over-target');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetSection = e.target.closest('.individual-file-section');
+            if (targetSection) {
+                targetSection.classList.remove('drag-over-target');
+                const dropTargetIndex = parseInt(targetSection.dataset.index);
+
+                if (draggedItemIndex !== dropTargetIndex) {
+                    // Reorder the arrays
+                    const [draggedFile] = uploadedFiles.splice(draggedItemIndex, 1);
+                    const [draggedFormData] = individualFormData.splice(draggedItemIndex, 1);
+
+                    uploadedFiles.splice(dropTargetIndex, 0, draggedFile);
+                    individualFormData.splice(dropTargetIndex, 0, draggedFormData);
+
+                    // Re-render the sections to reflect the new order and update data-indices
+                    renderIndividualNamingFields();
+                }
+            }
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging'); // Remove dragging class
+            // Clean up any remaining drag-over-target classes (important if drop happens outside a valid target)
+            document.querySelectorAll('.drag-over-target').forEach(el => el.classList.remove('drag-over-target'));
+            draggedItemIndex = -1; // Reset dragged item index
+        }
+
+
         // Function to clear fields for a specific individual section
-        function clearIndividualSectionFields(sectionElement) {
+        function clearIndividualSectionFields(sectionElement, index) {
+            // Clear DOM elements
             sectionElement.querySelector('[data-field="brandName"]').value = '';
             sectionElement.querySelector('[data-field="modelName"]').value = '';
             sectionElement.querySelector('[data-field="color"]').value = '';
             sectionElement.querySelector('[data-field="type"]').value = '';
             sectionElement.querySelector('[data-field="edition"]').value = '';
             sectionElement.querySelector('[data-field="year"]').value = '';
+
+            // Clear corresponding data in individualFormData
+            individualFormData[index] = {
+                brand: '',
+                model: '',
+                color: '',
+                type: '',
+                edition: '',
+                year: ''
+            };
 
             // Clear any error messages within this specific section
             sectionElement.querySelectorAll('.form-group.error').forEach(group => {
