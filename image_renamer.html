@@ -24,6 +24,13 @@
             text-align: center;
             margin-bottom: 20px;
         }
+        /* Style for the logo image */
+        .logo-image {
+            display: block;
+            margin: 0 auto 20px auto; /* Center the image and add space below */
+            max-width: 300px; /* Adjust size as needed */
+            height: auto;
+        }
         .form-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -462,8 +469,8 @@
 </head>
 <body>
     <div class="container">
-        <h1><img src="RenameFileLogov2.png" alt="Rename Files" width="200px"></h1>
-        <!-- <p style="text-align: center;">Upload your images, define the naming convention, and download them with new names!</p> -->
+        <img src="RenameFileLogov2.png" alt="Rename Files Logo" class="logo-image">
+        <h1></h1> <!-- The h1 tag is intentionally left empty as the image replaces the text title -->
         <p style="text-align: center;">Upload your files, rename, and download them with new names!</p>
 
         <!-- Main form fields - initially hidden -->
@@ -603,12 +610,13 @@
         const dropAreaLabel = document.getElementById('dropAreaLabel');
         const mainButtonGroup = document.getElementById('mainButtonGroup'); // Reference to the main button group
         const individualFileSectionsContainer = document.getElementById('individualFileSections'); // Container for individual file fields
+        const fileListSection = document.getElementById('fileList'); // Reference to the preview section
 
         // Download buttons and container
         const downloadButtonsContainer = document.getElementById('downloadButtonsContainer');
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         const downloadIndividualBtn = document.getElementById('downloadIndividualBtn');
-        const resetBtn = document.getElementById('resetBtn'); // Now "Start Over"
+        const resetBtn = document.getElementById('resetBtn'); // Corrected ID: Now "Start Over"
 
         // Modal elements
         const groupModal = document.getElementById('groupModal');
@@ -711,7 +719,7 @@
             individualFileSectionsContainer.innerHTML = ''; // Clear dynamically added fields
             mainButtonGroup.style.display = 'none';
             downloadButtonsContainer.style.display = 'none'; // Hide download buttons container
-            document.getElementById('fileList').style.display = 'none'; // Hide preview section
+            fileListSection.style.display = 'none'; // Hide preview section
             
             // Reset main form fields
             brandNameInput.value = '';
@@ -760,7 +768,7 @@
             }));
             renamedFilesUl.innerHTML = ''; // Clear preview
             downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
-            document.getElementById('fileList').style.display = 'none'; // Hide preview section
+            fileListSection.style.display = 'none'; // Hide preview section
 
             if (uploadedFiles.length > 0) {
                 dropAreaLabel.style.display = 'none'; // Hide drop area once files are selected
@@ -795,7 +803,7 @@
             // Clear previous results before processing new ones
             renamedFilesData = [];
             renamedFilesUl.innerHTML = '';
-            document.getElementById('fileList').style.display = 'block'; // Ensure preview section is visible
+            fileListSection.style.display = 'block'; // Ensure preview section is visible
 
             if (currentProcessingMode === 'group') {
                 // Process all uploaded files as a single group
@@ -913,7 +921,7 @@
             individualFileSectionsContainer.innerHTML = ''; // Clear any previous individual fields
             processFilesBtn.textContent = 'Rename Files'; // Ensure button text is correct
             downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
-            document.getElementById('fileList').style.display = 'none'; // Hide preview section
+            fileListSection.style.display = 'none'; // Hide preview section
         }
 
         function showIndividualNamingFields() {
@@ -927,7 +935,7 @@
             individualFileSectionsContainer.innerHTML = ''; // Clear previous individual fields
             processFilesBtn.textContent = 'Rename Files'; // Ensure button text is correct
             downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
-            document.getElementById('fileList').style.display = 'none'; // Hide preview section
+            fileListSection.style.display = 'none'; // Hide preview section
 
             uploadedFiles.forEach((file, index) => {
                 const sectionDiv = document.createElement('div');
@@ -1106,23 +1114,30 @@
 
         // --- Drag and Drop Handlers ---
         function handleDragStart(e) {
-            draggedItemIndex = parseInt(e.target.dataset.index);
+            // Ensure the drag is initiated from the drag handle or the section itself
+            if (!e.target.classList.contains('individual-file-section') && !e.target.closest('.drag-handle')) {
+                e.preventDefault(); // Prevent dragging if not from the handle/section
+                return;
+            }
+            draggedItemIndex = parseInt(e.target.closest('.individual-file-section').dataset.index);
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', draggedItemIndex); // Set data for drag operation
-            e.target.classList.add('dragging'); // Add dragging class for visual feedback
+            e.target.closest('.individual-file-section').classList.add('dragging'); // Add dragging class for visual feedback
         }
 
         function handleDragOver(e) {
             e.preventDefault(); // Necessary to allow dropping
             e.dataTransfer.dropEffect = 'move';
-            if (e.target.closest('.individual-file-section') && e.target.closest('.individual-file-section').dataset.index !== draggedItemIndex.toString()) {
-                e.target.closest('.individual-file-section').classList.add('drag-over-target');
+            const targetSection = e.target.closest('.individual-file-section');
+            if (targetSection && parseInt(targetSection.dataset.index) !== draggedItemIndex) {
+                targetSection.classList.add('drag-over-target');
             }
         }
 
         function handleDragLeave(e) {
-            if (e.target.closest('.individual-file-section')) {
-                e.target.closest('.individual-file-section').classList.remove('drag-over-target');
+            const targetSection = e.target.closest('.individual-file-section');
+            if (targetSection) {
+                targetSection.classList.remove('drag-over-target');
             }
         }
 
@@ -1148,7 +1163,7 @@
         }
 
         function handleDragEnd(e) {
-            e.target.classList.remove('dragging'); // Remove dragging class
+            e.target.closest('.individual-file-section').classList.remove('dragging'); // Remove dragging class
             // Clean up any remaining drag-over-target classes (important if drop happens outside a valid target)
             document.querySelectorAll('.drag-over-target').forEach(el => el.classList.remove('drag-over-target'));
             draggedItemIndex = -1; // Reset dragged item index
@@ -1258,6 +1273,8 @@
             }
             if (renamedFilesData.length > 0) {
                 downloadButtonsContainer.style.display = 'flex'; // Show the download buttons container
+                // Scroll to the file list section after processing
+                fileListSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
@@ -1383,7 +1400,7 @@
 
                 const content = await zip.generateAsync({ type: "blob" });
                 saveAs(content, "renamed_images.zip");
-                alert('Your renamed images are ready for download as a ZIP file. Please confirm the download in your browser.');
+                alert('Your renamed files are ready for download as a ZIP file. Your browser will handle the download, which may automatically save to your device\'s Downloads folder or prompt you for a location.');
             } catch (error) {
                 console.error("Error generating ZIP:", error);
                 alert('Failed to create ZIP file for download.');
@@ -1421,7 +1438,7 @@
             }
 
             if (successfulDownloads > 0) {
-                alert(`Initiated download for ${successfulDownloads} file(s). Please check your browser's download folder.`);
+                alert(`Initiated download for ${successfulDownloads} file(s). Your browser will handle the download for each, which may automatically save to your device\'s Downloads folder or prompt you for a location.`);
             } else {
                 alert('No files were successfully downloaded. Please check the console for errors.');
             }
