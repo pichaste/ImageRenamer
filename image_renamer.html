@@ -243,29 +243,22 @@
             flex-grow: 1; /* Allow buttons to grow and fill space */
             max-width: 250px; /* Limit max width for larger screens */
         }
-        #modalConfirmGroupBtn {
+        /* Specific styles for the generic modal buttons */
+        .modal-button-primary {
             background-color: #007bff; /* Primary blue */
             color: white;
         }
-        #modalConfirmGroupBtn:hover {
+        .modal-button-primary:hover {
             background-color: #0056b3;
         }
-        #modalSkipGroupBtn {
-            background-color: #007bff; /* Changed to primary blue */
-            color: white;
-        }
-        #modalSkipGroupBtn:hover {
-            background-color: #0056b3; /* Darker blue on hover */
-        }
-        #modalCancelBtn {
+        .modal-button-secondary {
             background-color: #6c757d; /* Grey for cancel */
             color: white;
-            margin-top: 10px; /* Add vertical space from the row above */
-            /* Reverted to original size, so no explicit width/max-width */
         }
-        #modalCancelBtn:hover {
+        .modal-button-secondary:hover {
             background-color: #5a6268;
         }
+
         /* Specific styling for the "Confirm Renames" button when in individual mode */
         #modalConfirmGroupBtn.individual-mode {
             background-color: #28a745; /* Green for confirm */
@@ -573,12 +566,19 @@
         </div>
     </div>
 
-    <div id="groupModal" class="modal">
+    <!-- Generic Modal for various prompts (e.g., ZIP file name, initial choice) -->
+    <div id="genericModal" class="modal">
         <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2 id="modalTitle">Group Selection</h2>
-            <p id="modalDescription" style="text-align: center;">Choose an option to proceed with renaming your uploaded images.</p>
+            <span class="close-button" id="genericModalCloseBtn">&times;</span>
+            <h2 id="genericModalTitle"></h2>
+            <p id="genericModalDescription" style="text-align: center;"></p>
             
+            <!-- Content for ZIP file name input -->
+            <div id="zipFileNameInputGroup" style="display: none; margin-top: 20px;">
+                <label for="zipFileNameInput" style="display: block; margin-bottom: 5px; font-weight: bold;">ZIP File Name:</label>
+                <input type="text" id="zipFileNameInput" style="width: calc(100% - 16px); padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="e.g., MyRenamedImages">
+            </div>
+
             <!-- Select All option for grouping (initially hidden, shown only in specific grouping mode if needed) -->
             <div class="select-all-option" id="groupSelectAllOption" style="display: none;">
                 <input type="checkbox" id="selectAllFilesCheckbox">
@@ -586,11 +586,15 @@
             </div>
 
             <div class="modal-footer">
-                <div class="button-row">
-                    <button id="modalConfirmGroupBtn">Rename all as a Group</button> <!-- Old: Process All as a Single Group -->
-                    <button id="modalSkipGroupBtn">Rename Each Individually</button> <!-- Old: Rename Each File Individually -->
+                <div class="button-row" id="modalChoiceButtons" style="display: none;">
+                    <button id="modalConfirmGroupBtn" class="modal-button-primary">Rename all as a Group</button>
+                    <button id="modalSkipGroupBtn" class="modal-button-primary">Rename Each Individually</button>
                 </div>
-                <button id="modalCancelBtn" style="display: none;">Cancel</button> 
+                <div class="button-row" id="modalDownloadButtons" style="display: none;">
+                    <button id="modalDownloadConfirmBtn" class="modal-button-primary">Confirm Download</button>
+                    <button id="modalDownloadCancelBtn" class="modal-button-secondary">Cancel</button>
+                </div>
+                <button id="modalCancelBtn" class="modal-button-secondary" style="display: none;">Cancel</button> 
             </div>
         </div>
     </div>
@@ -632,16 +636,29 @@
         const downloadIndividualBtn = document.getElementById('downloadIndividualBtn');
         const resetBtn = document.getElementById('resetBtn'); // Corrected ID: Now "Start Over"
 
-        // Modal elements
-        const groupModal = document.getElementById('groupModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalDescription = document.getElementById('modalDescription');
+        // Generic Modal elements
+        const genericModal = document.getElementById('genericModal');
+        const genericModalTitle = document.getElementById('genericModalTitle');
+        const genericModalDescription = document.getElementById('genericModalDescription');
+        const genericModalCloseBtn = document.getElementById('genericModalCloseBtn');
+
+        // Modal elements for initial choice (group/individual)
+        const modalChoiceButtons = document.getElementById('modalChoiceButtons');
         const modalConfirmGroupBtn = document.getElementById('modalConfirmGroupBtn');
         const modalSkipGroupBtn = document.getElementById('modalSkipGroupBtn');
-        const closeModalBtn = document.querySelector('.close-button'); // For groupModal
-        const selectAllFilesCheckbox = document.getElementById('selectAllFilesCheckbox'); // Not used in new flow
-        const groupSelectAllOption = document.getElementById('groupSelectAllOption'); // Not used in new flow
-        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn'); // This is the general cancel for initial choice
+
+        // Modal elements for ZIP file naming
+        const zipFileNameInputGroup = document.getElementById('zipFileNameInputGroup');
+        const zipFileNameInput = document.getElementById('zipFileNameInput');
+        const modalDownloadButtons = document.getElementById('modalDownloadButtons');
+        const modalDownloadConfirmBtn = document.getElementById('modalDownloadConfirmBtn');
+        const modalDownloadCancelBtn = document.getElementById('modalDownloadCancelBtn');
+        
+        // Not used in new flow, but kept for consistency with HTML structure
+        const selectAllFilesCheckbox = document.getElementById('selectAllFilesCheckbox');
+        const groupSelectAllOption = document.getElementById('groupSelectAllOption');
+
 
         // References to form group elements and error messages for validation (for main form)
         const formGroupBrandName = document.getElementById('formGroupBrandName');
@@ -661,30 +678,35 @@
         downloadIndividualBtn.addEventListener('click', downloadRenamedFilesIndividually);
         resetBtn.addEventListener('click', resetApp); // Reset button listener
         
-        // Event listeners for modals
-        closeModalBtn.addEventListener('click', () => groupModal.style.display = 'none'); // For groupModal
-
+        // Event listeners for generic modal close
+        if (genericModalCloseBtn) {
+            genericModalCloseBtn.addEventListener('click', () => genericModal.style.display = 'none');
+        }
         window.addEventListener('click', (event) => {
-            if (event.target == groupModal) {
-                groupModal.style.display = 'none';
+            if (event.target == genericModal) {
+                genericModal.style.display = 'none';
             }
         });
 
-        // Modal choice buttons
-        modalConfirmGroupBtn.addEventListener('click', () => {
-            groupModal.style.display = 'none';
-            showGroupNamingFields(); // User chose to process as a group
-        });
-
-        modalSkipGroupBtn.addEventListener('click', () => {
-            groupModal.style.display = 'none';
-            showIndividualNamingFields(); // User chose to rename individually
-        });
-
-        modalCancelBtn.addEventListener('click', () => {
-            groupModal.style.display = 'none';
-            resetApp(); // Cancel from modal goes back to initial state
-        });
+        // Event listeners for initial choice modal buttons
+        if (modalConfirmGroupBtn) {
+            modalConfirmGroupBtn.addEventListener('click', () => {
+                genericModal.style.display = 'none';
+                showGroupNamingFields();
+            });
+        }
+        if (modalSkipGroupBtn) {
+            modalSkipGroupBtn.addEventListener('click', () => {
+                genericModal.style.display = 'none';
+                showIndividualNamingFields();
+            });
+        }
+        if (modalCancelBtn) {
+            modalCancelBtn.addEventListener('click', () => {
+                genericModal.style.display = 'none';
+                resetApp();
+            });
+        }
 
         // Live input capitalization and error clearing for main form
         brandNameInput.addEventListener('input', () => {
@@ -702,7 +724,7 @@
         editionSelect.addEventListener('input', () => {
             editionSelect.value = capitalizeWordsLiveInput(editionSelect.value);
         });
-        channelSelect.addEventListener('change', () => { // New event listener for channel
+        channelSelect.addEventListener('change', () => {
             // No error to clear as it's optional
         });
         yearInput.addEventListener('input', () => {
@@ -752,6 +774,13 @@
 
             // Clear any error messages
             clearAllErrors();
+
+            // Hide all modal specific content
+            zipFileNameInputGroup.style.display = 'none';
+            modalDownloadButtons.style.display = 'none';
+            modalChoiceButtons.style.display = 'none';
+            modalCancelBtn.style.display = 'none'; // Hide the general cancel button for initial choice
+            genericModal.style.display = 'none'; // Ensure modal is hidden
 
             // Show only the drop area
             dropAreaLabel.style.display = 'flex';
@@ -922,19 +951,63 @@
         }
 
         function showInitialProcessingChoiceModal() {
-            modalTitle.textContent = 'How would you like to process these files?';
-            modalDescription.textContent = 'Choose an option to proceed with renaming your uploaded images.';
+            genericModalTitle.textContent = 'How would you like to process these files?';
+            genericModalDescription.textContent = 'Choose an option to proceed with renaming your uploaded images.';
             
-            modalConfirmGroupBtn.textContent = 'Rename all as a Group'; // Updated text
-            modalConfirmGroupBtn.classList.remove('individual-mode');
-            modalConfirmGroupBtn.style.display = 'inline-block';
+            // Hide ZIP input and download buttons
+            zipFileNameInputGroup.style.display = 'none';
+            modalDownloadButtons.style.display = 'none';
 
-            modalSkipGroupBtn.textContent = 'Rename Each Individually'; // Updated text
-            modalSkipGroupBtn.style.display = 'inline-block';
+            // Show choice buttons
+            modalChoiceButtons.style.display = 'flex';
+            modalCancelBtn.style.display = 'inline-block'; // Show general cancel button
 
-            modalCancelBtn.style.display = 'inline-block'; // Show cancel button
-            groupSelectAllOption.style.display = 'none'; // Hide select all for this choice
-            groupModal.style.display = 'flex'; // Show the modal
+            genericModal.style.display = 'flex'; // Show the modal
+        }
+
+        /**
+         * Displays a custom modal to get the ZIP file name from the user.
+         * @param {string} defaultName The default name to pre-fill the input.
+         * @returns {Promise<string|null>} A promise that resolves with the entered name or null if cancelled.
+         */
+        function showDownloadNameModal(defaultName) {
+            return new Promise((resolve) => {
+                genericModalTitle.textContent = 'Enter ZIP File Name';
+                genericModalDescription.textContent = 'Please enter a name for the compressed ZIP file.';
+                zipFileNameInput.value = defaultName;
+
+                // Hide choice buttons
+                modalChoiceButtons.style.display = 'none';
+                modalCancelBtn.style.display = 'none'; // Hide general cancel button
+
+                // Show ZIP input and download buttons
+                zipFileNameInputGroup.style.display = 'block';
+                modalDownloadButtons.style.display = 'flex';
+
+                genericModal.style.display = 'flex'; // Show the modal
+
+                // Clear previous listeners to avoid multiple calls
+                modalDownloadConfirmBtn.onclick = null;
+                modalDownloadCancelBtn.onclick = null;
+
+                modalDownloadConfirmBtn.onclick = () => {
+                    genericModal.style.display = 'none';
+                    resolve(zipFileNameInput.value);
+                };
+
+                modalDownloadCancelBtn.onclick = () => {
+                    genericModal.style.display = 'none';
+                    resolve(null); // User cancelled
+                };
+
+                // Allow pressing Enter to confirm
+                zipFileNameInput.onkeydown = (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault(); // Prevent default form submission
+                        modalDownloadConfirmBtn.click(); // Simulate click on confirm
+                    }
+                };
+            });
         }
 
         function showGroupNamingFields() {
@@ -1263,6 +1336,7 @@
             parts.push(year);
 
             let newName = parts.join('-');
+
             const originalExtension = file.name.split('.').pop();
             return `${newName}.${originalExtension}`;
         }
@@ -1406,20 +1480,64 @@
             const originalExtension = originalFileName.split('.').pop();
             const currentNameWithoutExt = currentName.replace(/\.[^/.]+$/, "");
 
-            const newPromptName = prompt(`Edit the new name for "${originalFileName}":`, currentNameWithoutExt);
+            // Using the custom modal for editing individual file names too
+            showDownloadNameModal(currentNameWithoutExt).then(newPromptName => {
+                if (newPromptName !== null && newPromptName.trim() !== "") {
+                    const finalNewName = `${sanitizeFileNameForOutput(newPromptName)}.${originalExtension}`;
+                    renamedFilesData[index].newName = finalNewName;
+                    updateFileListItem(index, finalNewName);
+                }
+            });
+        }
 
-            if (newPromptName !== null && newPromptName.trim() !== "") {
-                const finalNewName = `${sanitizeFileNameForOutput(newPromptName)}.${originalExtension}`;
-                renamedFilesData[index].newName = finalNewName;
-                updateFileListItem(index, finalNewName);
+        /**
+         * Detects if the current device is likely a mobile device.
+         * @returns {boolean} True if mobile, false otherwise.
+         */
+        function isMobileDevice() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            // Basic check for common mobile keywords in user agent
+            if (/android|ipad|iphone|ipod|blackberry|windows phone/i.test(userAgent)) {
+                return true;
             }
+            // Check for touch events (less reliable on desktop touchscreens, but good for general mobile detection)
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0) {
+                return true;
+            }
+            // Fallback for smaller screens (can be inaccurate for tablets in landscape)
+            return window.innerWidth <= 768; // Common breakpoint for mobile
         }
 
         async function downloadAllRenamedFiles() {
+            console.log("Attempting to download all renamed files (ZIP)...");
             if (renamedFilesData.length === 0) {
                 alert('No files to download. Please process images first.');
+                console.log("renamedFilesData is empty. Aborting ZIP download.");
                 return;
             }
+
+            // Check if FileSaver.js is loaded
+            if (typeof saveAs === 'undefined') {
+                alert('FileSaver.js library is not loaded. Cannot download files. Please check your internet connection or browser settings.');
+                console.error("FileSaver.js (saveAs function) is not defined.");
+                return;
+            }
+
+            const defaultZipName = 'renamed_images.zip';
+            let zipFileName = await showDownloadNameModal(defaultZipName.replace('.zip', ''));
+
+            // If user cancels the prompt, stop the download process
+            if (zipFileName === null || zipFileName.trim() === "") {
+                console.log("User cancelled ZIP file naming prompt or entered empty name.");
+                alert("ZIP file download cancelled.");
+                return;
+            }
+
+            // Ensure .zip extension is present
+            if (!zipFileName.toLowerCase().endsWith('.zip')) {
+                zipFileName += '.zip';
+            }
+            console.log(`User entered ZIP file name: ${zipFileName}`);
 
             const zip = new JSZip();
             let allBlobsReady = true;
@@ -1427,9 +1545,10 @@
             for (const data of renamedFilesData) {
                 if (data.blob) {
                     if (zip.files[data.newName]) {
-                        console.warn(`Duplicate filename detected: ${data.newName}. This file will overwrite a previous one in the ZIP.`);
+                        console.warn(`Duplicate filename detected in ZIP: ${data.newName}. This file will overwrite a previous one.`);
                     }
                     zip.file(data.newName, data.blob);
+                    console.log(`Added file to ZIP: ${data.newName}`);
                 } else {
                     console.error(`Blob for ${data.newName} is missing. Cannot add to ZIP.`);
                     allBlobsReady = false;
@@ -1439,6 +1558,7 @@
 
             if (!allBlobsReady) {
                 alert('Some files could not be prepared for download. Please check the console for errors.');
+                console.error("Not all blobs were ready for ZIP creation. Aborting.");
                 return;
             }
 
@@ -1447,25 +1567,46 @@
                 downloadAllBtn.disabled = true;
                 downloadIndividualBtn.disabled = true; // Disable other download button
                 downloadAllBtn.textContent = 'Generating ZIP...';
+                console.log("Generating ZIP file asynchronously...");
 
                 const content = await zip.generateAsync({ type: "blob" });
-                saveAs(content, "renamed_images.zip");
-                alert('Your renamed files are ready for download as a ZIP file. Your browser will handle the download, which may automatically save to your device\'s Downloads folder or prompt you for a location.');
+                
+                console.log("ZIP blob generated:", content);
+                console.log(`Calling saveAs with blob and filename: ${zipFileName}`);
+
+                saveAs(content, zipFileName);
+
+                if (isMobileDevice()) {
+                    alert(`Your renamed files are ready for download as "${zipFileName}". On mobile, your browser will handle the download, which may automatically save to your device\'s Downloads folder or prompt you for a location. In some cases, you might still need to manually add ".zip" to the filename if your device strips it.`);
+                } else {
+                    alert(`Your renamed files are ready for download as "${zipFileName}". Your browser will handle the download, which may automatically save to your device\'s Downloads folder or prompt you for a location.`);
+                }
+                console.log("ZIP download initiated successfully.");
+                
             } catch (error) {
-                console.error("Error generating ZIP:", error);
-                alert('Failed to create ZIP file for download.');
+                console.error("Error generating or saving ZIP:", error);
+                alert('Failed to create or download ZIP file. Please check the console for more details.');
             } finally {
                 processFilesBtn.disabled = false;
                 downloadAllBtn.disabled = false;
                 downloadIndividualBtn.disabled = false; // Re-enable other download button
                 downloadAllBtn.textContent = 'Download All Renamed Files (ZIP)';
+                console.log("ZIP download process finished. Buttons re-enabled.");
             }
         }
 
-        // Reverted to original function name for direct individual downloads
         async function downloadRenamedFilesIndividually() {
+            console.log("Attempting to download files individually...");
             if (renamedFilesData.length === 0) {
                 alert('No files to download. Please process images first.');
+                console.log("renamedFilesData is empty. Aborting individual download.");
+                return;
+            }
+
+            // Check if FileSaver.js is loaded
+            if (typeof saveAs === 'undefined') {
+                alert('FileSaver.js library is not loaded. Cannot download files. Please check your internet connection or browser settings.');
+                console.error("FileSaver.js (saveAs function) is not defined for individual download.");
                 return;
             }
 
@@ -1473,13 +1614,16 @@
             downloadAllBtn.disabled = true;
             downloadIndividualBtn.disabled = true;
             downloadIndividualBtn.textContent = 'Downloading...';
+            console.log("Individual download: buttons disabled.");
 
             let successfulDownloads = 0;
             for (const data of renamedFilesData) {
                 if (data.blob) {
                     try {
+                        console.log(`Attempting to save individual file: ${data.newName}`);
                         saveAs(data.blob, data.newName);
                         successfulDownloads++;
+                        console.log(`Successfully initiated download for: ${data.newName}`);
                     } catch (error) {
                         console.error(`Error downloading ${data.newName}:`, error);
                     }
@@ -1493,11 +1637,13 @@
             } else {
                 alert('No files were successfully downloaded. Please check the console for errors.');
             }
+            console.log(`Individual download: finished. Successful downloads: ${successfulDownloads}`);
 
             processFilesBtn.disabled = false;
             downloadAllBtn.disabled = false;
             downloadIndividualBtn.disabled = false;
             downloadIndividualBtn.textContent = 'Download Files Individually';
+            console.log("Individual download: buttons re-enabled.");
         }
 
         // Initialize display states on load
