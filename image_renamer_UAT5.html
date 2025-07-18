@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Renamer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            margin: 20px auto;
+        }
+        h1, h2 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        /* Style for the logo image */
+        .logo-image {
+            display: block;
+            margin: 0 auto 20px auto; /* Center the image and add space below */
+            max-width: 300px; /* Adjust size as needed */
+            height: auto;
+        }
+        .form-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+            border: 1px solid #b0b0b0; /* Updated to darker theme border */
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f0f0f0; /* Updated to darker theme background */
+        }
+        /* Hidden by default, shown when needed */
+        .form-section.hidden {
+            display: none;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+            position: relative; /* For positioning asterisk/info icon */
+        }
+        .form-group input[type="text"],
+        .form-group select {
+            width: calc(100% - 16px);
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition for error state */
+        }
+        .form-group select {
+            height: 36px; /* Match input height */
+        }
+        /* Error styling for mandatory fields */
+        .form-group.error input[type="text"],
+        .form-group.error select {
+            border-color: #dc3545; /* Red border */
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25); /* Light red shadow */
+        }
+        .error-message {
+            color: #dc3545; /* Red text for error message */
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none; /* Hidden by default */
+        }
+        .form-group.error .error-message {
+            display: block; /* Show when in error state */
+        }
+
+        /* Removed styles for required-indicator, info-icon, info-tooltip */
+
+
+        /* Style for the custom file input area (label) */
+        .drop-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px; /* Make the drag-and-drop area bigger */
+            margin-top: 15px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 2px dashed #007bff; /* Slightly thicker border for emphasis */
+            border-radius: 8px; /* Slightly more rounded corners */
+            background-color: #e6f2ff;
+            color: #007bff;
+            font-size: 1.1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            position: relative; /* Needed for absolute positioning of the actual input */
+        }
+        .drop-area:hover {
+            background-color: #dbeeff;
+            border-color: #0056b3;
+        }
+        /* Style for drag-and-drop active state */
+        .drop-area.drag-over {
+            background-color: #dbeeff;
+            border-color: #0056b3;
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.7);
+        }
+        /* Hide the actual file input but keep it accessible */
+        .drop-area input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10; /* Ensure it's above the text */
+        }
+
+        .button-group {
+            text-align: center;
+            margin-top: 20px;
+            display: flex; /* Use flexbox for button alignment */
+            justify-content: center; /* Center buttons horizontally */
+            gap: 10px; /* Space between buttons */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+        .button-group button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        .button-group button:hover {
+            background-color: #0056b3;
+        }
+        /* Specific styling for the top Reset button */
+        #resetBtnTop {
+            background-color: #6c757d; /* Grey color for reset */
+            color: white; /* White text */
+            padding: 10px 20px; /* Match main button padding */
+            border: none; /* Ensure no default border */
+            border-radius: 5px; /* Slightly rounded corners */
+            cursor: pointer;
+            font-size: 1rem; /* Match main button font size */
+            transition: background-color 0.3s ease;
+        }
+        #resetBtnTop:hover {
+            background-color: #5a6268; /* Darker grey on hover */
+        }
+
+        #fileList {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            /* Hidden by default, shown when needed */
+            display: none;
+        }
+        #fileList ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #fileList li {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            margin-bottom: 8px;
+            padding: 12px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        #fileList li span {
+            flex-grow: 1;
+            margin-right: 10px;
+            word-break: break-all; /* Ensures long names wrap */
+        }
+        #fileList li .edit-icon {
+            cursor: pointer;
+            color: #007bff;
+            font-weight: bold;
+            margin-left: 10px;
+            transition: color 0.3s ease;
+        }
+        #fileList li .edit-icon:hover {
+            color: #0056b3;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 25px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Removed .modal-file-list as the element is being removed */
+        .modal-footer {
+            text-align: center; /* Centered buttons */
+            margin-top: 15px; /* Spacing for the select all option */
+            display: flex; /* Use flexbox for button alignment */
+            flex-direction: column; /* Stack buttons vertically by default */
+            align-items: center; /* Center items horizontally when stacked */
+            gap: 10px; /* Space between buttons */
+        }
+        .modal-footer .button-row { /* New class for grouping blue buttons */
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px; /* Horizontal space between these buttons */
+            width: 100%; /* Take full width to center its contents */
+        }
+        .modal-footer button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            max-width: 250px; /* Limit max width for larger screens */
+        }
+        /* Specific styles for the generic modal buttons */
+        .modal-button-primary {
+            background-color: #007bff; /* Primary blue */
+            color: white;
+        }
+        .modal-button-primary:hover {
+            background-color: #0056b3;
+        }
+        .modal-button-secondary {
+            background-color: #6c757d; /* Grey for cancel */
+            color: white;
+        }
+        .modal-button-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        /* Specific styling for the "Confirm Renames" button when in individual mode */
+        #modalConfirmGroupBtn.individual-mode {
+            background-color: #28a745; /* Green for confirm */
+        }
+        #modalConfirmGroupBtn.individual-mode:hover {
+            background-color: #218838;
+        }
+
+        .select-all-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #333;
+        }
+        .select-all-option input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2); /* Slightly larger checkbox */
+        }
+
+        /* Styles for individual file naming sections */
+        .individual-file-section {
+            border: 1px solid #b0b0b0; /* Updated to darker theme border */
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f0f0f0; /* Updated to darker theme background */
+            margin-bottom: 20px; /* Space between each file's section */
+            position: relative; /* Needed for absolute positioning of move buttons */
+            /* Removed cursor: grab; */
+            transition: opacity 0.2s ease, border-color 0.2s ease;
+        }
+        /* Removed .individual-file-section.dragging */
+        /* Removed .individual-file-section.drag-over-target */
+        .individual-file-section h3 {
+            margin: 0; /* Adjust margin as it's now inside flex container */
+            text-align: center; /* Keep text centered */
+            flex-grow: 1; /* Allow text to take available space */
+        }
+        /* Apply grid layout to the content within each individual file section */
+        .individual-file-section .form-fields-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .individual-file-section .form-group {
+            margin-bottom: 0; /* Remove margin-bottom from form-group when inside grid */
+        }
+
+        /* Styling for the image thumbnail */
+        .file-header {
+            display: flex;
+            flex-direction: column; /* Stack image and text vertically */
+            align-items: center; /* Center horizontally */
+            gap: 10px; /* Space between image and text */
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #d0d0d0; /* A subtle separator */
+        }
+        .file-thumbnail {
+            max-width: 80px; /* Small size for thumbnail */
+            max-height: 80px;
+            width: auto;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            object-fit: contain; /* Ensure image fits without cropping */
+        }
+
+        /* Clear button specific styles */
+        .clear-individual-btn {
+            background-color: #f44336; /* Red color for clear/delete action */
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 15px; /* Space from fields above */
+            display: block; /* Take full width */
+            width: 100%; /* Take full width */
+            transition: background-color 0.3s ease;
+        }
+        .clear-individual-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Removed .drag-handle */
+        /* Removed .drag-handle svg */
+
+        /* Delete "X" button for individual sections */
+        .delete-x-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #007bff; /* Changed to blue */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 2; /* Above drag handle */
+            transition: background-color 0.2s ease;
+        }
+        .delete-x-button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+
+        /* Removed swipe-to-delete styles */
+        /* .swipe-wrapper, .content-container, .delete-button-slide-in are no longer needed */
+       
+        /* Live preview style */
+        .live-preview-name {
+            background-color: #e9e9e9;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #444;
+            word-break: break-all;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+
+
+        /* Style for the Download All button when placed in fileList */
+        #downloadButtonsContainer {
+            text-align: center;
+            margin-top: 20px;
+            display: flex; /* Use flexbox for button alignment */
+            flex-direction: column; /* Stack children vertically */
+            align-items: center; /* Center items horizontally */
+            gap: 20px; /* Vertical space between download buttons row and reset button */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+        /* Inner div for download buttons to keep them horizontal */
+        #downloadButtonsContainer .download-buttons-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* Horizontal space between download buttons */
+            flex-wrap: wrap;
+            width: 100%; /* Take full width to center its contents */
+        }
+
+        #downloadButtonsContainer button {
+            padding: 12px 20px; /* Larger padding */
+            font-size: 1.1rem; /* Larger font */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex-grow: 1; /* Allow buttons to grow and fill space */
+            max-width: 300px; /* Limit max width for larger screens */
+        }
+
+        #downloadAllBtn {
+            background-color: #007bff; /* Blue color for download */
+            color: white; /* White text */
+        }
+        #downloadAllBtn:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+
+        #downloadIndividualBtn {
+            background-color: #28a745; /* Green color for individual download */
+            color: white;
+        }
+        #downloadIndividualBtn:hover {
+            background-color: #218838;
+        }
+
+        /* New button for Web Share API */
+        #shareFilesBtn {
+            background-color: #ffc107; /* Yellow/Orange for share */
+            color: #333; /* Dark text for contrast */
+        }
+        #shareFilesBtn:hover {
+            background-color: #e0a800; /* Darker yellow/orange on hover */
+        }
+
+        /* Styling for the Reset button at the bottom */
+        #resetBtnBottom {
+            background-color: #6c757d; /* Grey color for reset */
+            color: white; /* White text */
+            padding: 10px 20px; /* Match main button padding */
+            border: none; /* Ensure no default border */
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem; /* Match main button font size */
+            transition: background-color 0.3s ease;
+            /* No margin: 0 auto; display: block; needed here as it's now a flex item */
+            /* It will be centered by align-items: center on #downloadButtonsContainer */
+        }
+        #resetBtnBottom:hover {
+            background-color: #5a6268; /* Darker grey on hover */
+        }
+
+        /* Styles for optgroup labels */
+        optgroup {
+            font-weight: bold;
+            font-size: 1.1em; /* Slightly larger than options */
+            background-color: #e0e0e0; /* Light grey background */
+            color: #0056b3; /* Darker blue text */
+            padding: 5px 8px; /* Padding inside the label */
+            margin-top: 5px; /* Space above each optgroup */
+            border-bottom: 1px solid #ccc; /* Subtle separator */
+        }
+
+        /* Styles for options within optgroups to increase indentation */
+        optgroup option {
+            padding-left: 25px; /* Increased indentation */
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 769px) { /* Apply horizontal layout for larger screens */
+            .modal-footer {
+                flex-direction: column; /* Keep buttons stacked for clarity */
+            }
+            .modal-footer .button-row {
+                width: auto; /* Allow row to shrink to content */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-section,
+            .individual-file-section .form-fields-grid { /* Apply to both main and individual grids */
+                grid-template-columns: 1fr;
+            }
+            .button-group button {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+            }
+            .modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+            #downloadButtonsContainer {
+                flex-direction: column; /* Stack buttons vertically on small screens */
+                align-items: center;
+            }
+            #downloadButtonsContainer .download-buttons-row {
+                flex-direction: column; /* Stack download buttons vertically on small screens */
+            }
+            #downloadButtonsContainer button {
+                width: 100%; /* Full width for stacked buttons */
+                max-width: none; /* Remove max-width constraint */
+            }
+            .modal-footer button {
+                flex-grow: 1; /* Allow modal buttons to grow and fill space */
+                width: 100%; /* Full width for stacked buttons */
+                max-width: none; /* Remove max-width constraint */
+            }
+            /* Reset button specific responsive adjustments */
+            #resetBtnBottom {
+                width: 100%; /* Make it full width on small screens */
+                max-width: none; /* Remove max-width constraint */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="RenameFileLogov2.png" alt="Rename Files Logo" class="logo-image">
+        <h1></h1> <!-- The h1 tag is intentionally left empty as the image replaces the text title -->
+        <p style="text-align: center;">Upload your files, rename, and download them with new names!</p>
+
+        <!-- Main form fields - initially hidden -->
+        <div class="form-section hidden" id="mainFormSection">
+            <div class="form-group" id="formGroupBrandName">
+                <label for="brandName">Brand Name:</label>
+                <input type="text" id="brandName" placeholder="e.g., Armando Simoni Club">
+                <span class="error-message" id="errorBrandName">Brand Name is required.</span>
+            </div>
+            <div class="form-group" id="formGroupModelName">
+                <label for="modelName">Model Name:</label>
+                <input type="text" id="modelName" placeholder="e.g., Bologna Extra">
+                <span class="error-message" id="errorModelName">Model Name is required.</span>
+            </div>
+            <div class="form-group">
+                <label for="color">Color (Optional):</label>
+                <input type="text" id="color" placeholder="e.g., Black (Optional)">
+            </div>
+            <div class="form-group">
+                <label for="edition">Edition (Optional):</label>
+                <select id="edition">
+                    <option value="">Select Edition</option>
+                    <optgroup label="Special Editions">
+                        <option value="LE">Limited Edition</option>
+                        <option value="SE">Special Edition</option>
+                    </optgroup>
+                    <optgroup label="Collections">
+                        <option value="Backroom">Backroom</option>
+                        <option value="Collection">Collection</option>
+                        <option value="Vintage">Vintage</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="channel">Channel (Optional):</label>
+                <select id="channel">
+                    <option value="">Select Channel</option>
+                    <optgroup label="Web Banners">
+                        <option value="CarouselBanner">Carousel Banner</option>
+                        <option value="SmallBanner">Small Banner</option>
+                    </optgroup>
+                    <optgroup label="Social Media">
+                        <option value="Facebook">Facebook</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="Twitter">Twitter</option>
+                        <option value="X">X</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="form-group" id="formGroupType">
+                <label for="type">Type:</label>
+                <select id="type">
+                    <option value="">Select Type</option>
+                    <optgroup label="Writing Instruments">
+                        <option value="FountainPen">Fountain Pen</option>
+                        <option value="Rollerball">Rollerball</option>
+                        <option value="Ballpoint">Ballpoint</option>
+                        <option value="MechanicalPencil">Mechanical Pencil</option>
+                    </optgroup>
+                    <optgroup label="Ink & Refills">
+                        <option value="BottleInk">Bottle Ink</option>
+                        <option value="Cartridge">Cartridge</option>
+                        <option value="BallpointRefill">Ballpoint Refill</option>
+                        <option value="RollerballRefill">Rollerball Refill</option>
+                        <option value="GelRefill">Gel Refill</option>
+                        <option value="Refill">Refill</option>
+                        <option value="Led">Led</p>
+                    </optgroup>
+                    <optgroup label="Paper">
+                        <option value="Notebook">Notebook</option>
+                        <option value="Pad">Pad</option>
+                        <option value="Paper">Paper</option>
+                    </optgroup>
+                    <optgroup label="Accessories">
+                        <option value="Accessory">Accessory</option>
+                        <option value="LeatherCase">Leather Case</option>
+                        <option value="Case">Case</p>
+                        <option value="Inkwell">Inkwell</p>
+                    </optgroup>
+                </select>
+                <span class="error-message" id="errorType">Type is required.</span>
+            </div>
+            <!-- Live preview for group naming -->
+            <div class="live-preview-name" id="groupLivePreview" style="grid-column: 1 / -1;">
+                New Name Preview:
+            </div>
+            <!-- Year field removed as per request -->
+        </div>
+
+        <!-- Container for individually named file sections - initially hidden -->
+        <div id="individualFileSections" style="display: none;">
+            <!-- Individual file naming sections will be dynamically added here -->
+        </div>
+
+        <!-- Updated file input area for drag and drop -->
+        <label for="imageUpload" class="drop-area" id="dropAreaLabel">
+            Drag and drop files here or click to browse
+            <input type="file" id="imageUpload" multiple accept="image/*">
+        </label>
+
+        <div class="button-group" id="mainButtonGroup">
+            <button id="processFilesBtn">Rename Files</button>
+            <button id="resetBtnTop">Start Over</button> <!-- New "Start Over" button -->
+        </div>
+
+        <div id="fileList">
+            <h2>Renamed Files Preview:</h2>
+            <ul id="renamedFilesUl">
+                </ul>
+            <div id="downloadButtonsContainer" style="display: none;">
+                <div class="download-buttons-row">
+                    <button id="downloadAllBtn">Download All Renamed Files (ZIP)</button>
+                    <button id="downloadIndividualBtn">Download Files Individually</button>
+                    <button id="shareFilesBtn">Downlaod Renamed Files <img src="iOS_logo.png" height="20px" alt="iOS Logo"></img></button> <!-- New Share button -->
+                </div>
+                <button id="resetBtnBottom">Start Over</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Modal for various prompts (e.g., ZIP file name, initial choice) -->
+    <div id="genericModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="genericModalCloseBtn">&times;</span>
+            <h2 id="genericModalTitle"></h2>
+            <p id="genericModalDescription" style="text-align: center;"></p>
+            
+            <!-- Content for ZIP file name input -->
+            <div id="zipFileNameInputGroup" style="display: none; margin-top: 20px;">
+                <label for="zipFileNameInput" style="display: block; margin-bottom: 5px; font-weight: bold;">ZIP File Name:</label>
+                <input type="text" id="zipFileNameInput" style="width: calc(100% - 16px); padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="e.g., MyRenamedImages">
+            </div>
+
+            <!-- Select All option for grouping (initially hidden, shown only in specific grouping mode if needed) -->
+            <div class="select-all-option" id="groupSelectAllOption" style="display: none;">
+                <input type="checkbox" id="selectAllFilesCheckbox">
+                <label for="selectAllFilesCheckbox">Select All</label>
+            </div>
+
+            <div class="modal-footer">
+                <div class="button-row" id="modalChoiceButtons" style="display: none;">
+                    <button id="modalConfirmGroupBtn" class="modal-button-primary">Rename all as a Group</button>
+                    <button id="modalSkipGroupBtn" class="modal-button-primary">Rename Each Individually</button>
+                </div>
+                <div class="button-row" id="modalDownloadButtons" style="display: none;">
+                    <button id="modalDownloadConfirmBtn" class="modal-button-primary">Confirm Download</button>
+                    <button id="modalDownloadCancelBtn" class="modal-button-secondary">Cancel</button>
+                </div>
+                <div class="button-row" id="modalConfirmButtons" style="display: none;">
+                    <button id="modalConfirmYesBtn" class="modal-button-primary">Yes</button>
+                    <button id="modalConfirmNoBtn" class="modal-button-secondary">No</button>
+                </div>
+                <button id="modalCancelBtn" class="modal-button-secondary" style="display: none;">Cancel</button> 
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        // Store original File objects and their potential new names
+        let uploadedFiles = [];
+        let renamedFilesData = []; // Stores { originalFile: File, newName: "...", blob: Blob }
+        let currentProcessingMode = ''; // 'group', 'individual'
+        // Removed: let draggedItemIndex = -1; // To store the index of the currently dragged item
+
+        // New array to store form data for individual files
+        let individualFormData = []; // Stores { brand: '', model: '', ... } for each file
+
+        // Main form elements
+        const mainFormSection = document.getElementById('mainFormSection');
+        const brandNameInput = document.getElementById('brandName');
+        const modelNameInput = document.getElementById('modelName');
+        const colorInput = document.getElementById('color');
+        const typeSelect = document.getElementById('type');
+        const editionSelect = document.getElementById('edition');
+        const channelSelect = document.getElementById('channel'); // New channel select element
+        // const yearInput = document.getElementById('year'); // Removed as per request
+
+        // UI elements
+        const imageUpload = document.getElementById('imageUpload');
+        const processFilesBtn = document.getElementById('processFilesBtn');
+        const renamedFilesUl = document.getElementById('renamedFilesUl');
+        const dropAreaLabel = document.getElementById('dropAreaLabel');
+        const mainButtonGroup = document.getElementById('mainButtonGroup'); // Reference to the main button group
+        const individualFileSectionsContainer = document.getElementById('individualFileSections'); // Container for individual file fields
+        const fileListSection = document.getElementById('fileList'); // Reference to the preview section
+        const groupLivePreview = document.getElementById('groupLivePreview'); // New: Live preview for group naming
+
+
+        // Download buttons and container
+        const downloadButtonsContainer = document.getElementById('downloadButtonsContainer');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const downloadIndividualBtn = document.getElementById('downloadIndividualBtn');
+        const shareFilesBtn = document.getElementById('shareFilesBtn'); // New: Share button
+        const resetBtnTop = document.getElementById('resetBtnTop'); // New: Top "Start Over" button
+        const resetBtnBottom = document.getElementById('resetBtnBottom'); // Renamed: Bottom "Start Over" button
+        
+        // Generic Modal elements
+        const genericModal = document.getElementById('genericModal');
+        const genericModalTitle = document.getElementById('genericModalTitle');
+        const genericModalDescription = document.getElementById('genericModalDescription');
+        const genericModalCloseBtn = document.getElementById('genericModalCloseBtn');
+
+        // Modal elements for initial choice (group/individual)
+        const modalChoiceButtons = document.getElementById('modalChoiceButtons');
+        const modalConfirmGroupBtn = document.getElementById('modalConfirmGroupBtn');
+        const modalSkipGroupBtn = document.getElementById('modalSkipGroupBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn'); // This is the general cancel for initial choice
+
+        // Modal elements for ZIP file naming
+        const zipFileNameInputGroup = document.getElementById('zipFileNameInputGroup');
+        const zipFileNameInput = document.getElementById('zipFileNameInput');
+        const modalDownloadButtons = document.getElementById('modalDownloadButtons');
+        const modalDownloadConfirmBtn = document.getElementById('modalDownloadConfirmBtn');
+        const modalDownloadCancelBtn = document.getElementById('modalDownloadCancelBtn');
+
+        // Modal elements for general confirmation (Yes/No)
+        const modalConfirmButtons = document.getElementById('modalConfirmButtons');
+        const modalConfirmYesBtn = document.getElementById('modalConfirmYesBtn');
+        const modalConfirmNoBtn = document.getElementById('modalConfirmNoBtn');
+        
+        // Not used in new flow, but kept for consistency with HTML structure
+        const selectAllFilesCheckbox = document.getElementById('selectAllFilesCheckbox');
+        const groupSelectAllOption = document.getElementById('groupSelectAllOption');
+
+
+        // References to form group elements and error messages for validation (for main form)
+        const formGroupBrandName = document.getElementById('formGroupBrandName');
+        const errorBrandName = document.getElementById('errorBrandName');
+        const formGroupModelName = document.getElementById('formGroupModelName'); // Corrected ID
+        const errorModelName = document.getElementById('errorModelName');
+        const formGroupType = document.getElementById('formGroupType');
+        const errorType = document.getElementById('errorType');
+
+
+        // --- Event Listeners ---
+        imageUpload.addEventListener('change', handleFileSelect);
+        processFilesBtn.addEventListener('click', processFiles);
+        downloadAllBtn.addEventListener('click', downloadAllRenamedFiles);
+        downloadIndividualBtn.addEventListener('click', downloadRenamedFilesIndividually);
+        shareFilesBtn.addEventListener('click', handleShareFiles); // New: Share button listener
+        resetBtnTop.addEventListener('click', resetApp); // Top Reset button listener
+        resetBtnBottom.addEventListener('click', resetApp); // Bottom Reset button listener
+        
+        // Event listeners for generic modal close
+        if (genericModalCloseBtn) {
+            genericModalCloseBtn.addEventListener('click', () => genericModal.style.display = 'none');
+        }
+        window.addEventListener('click', (event) => {
+            if (event.target == genericModal) {
+                genericModal.style.display = 'none';
+            }
+        });
+
+        // Event listeners for initial choice modal buttons
+        if (modalConfirmGroupBtn) {
+            modalConfirmGroupBtn.addEventListener('click', () => {
+                genericModal.style.display = 'none';
+                showGroupNamingFields();
+            });
+        }
+        if (modalSkipGroupBtn) {
+            modalSkipGroupBtn.addEventListener('click', () => {
+                genericModal.style.display = 'none';
+                showIndividualNamingFields();
+            });
+        }
+        if (modalCancelBtn) {
+            modalCancelBtn.addEventListener('click', () => {
+                genericModal.style.display = 'none';
+                resetApp();
+            });
+        }
+
+        // Live input capitalization and error clearing for main form
+        brandNameInput.addEventListener('input', () => {
+            clearError(formGroupBrandName);
+            brandNameInput.value = capitalizeWordsLiveInput(brandNameInput.value);
+            updateGroupLivePreview(); // Update live preview
+        });
+        modelNameInput.addEventListener('input', () => {
+            clearError(formGroupModelName);
+            modelNameInput.value = capitalizeWordsLiveInput(modelNameInput.value);
+            updateGroupLivePreview(); // Update live preview
+        });
+        colorInput.addEventListener('input', () => {
+            colorInput.value = capitalizeWordsLiveInput(colorInput.value);
+            updateGroupLivePreview(); // Update live preview
+        });
+        typeSelect.addEventListener('change', () => {
+            clearError(formGroupType);
+            updateGroupLivePreview(); // Update live preview
+        });
+        editionSelect.addEventListener('change', () => { // Changed to 'change' for select elements
+            // No error to clear as it's optional
+            updateGroupLivePreview(); // Update live preview
+        });
+        channelSelect.addEventListener('change', () => {
+            // No error to clear as it's optional
+            updateGroupLivePreview(); // Update live preview
+        });
+
+        // Drag and Drop functionality for file input
+        dropAreaLabel.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropAreaLabel.classList.add('drag-over');
+        });
+        dropAreaLabel.addEventListener('dragleave', () => {
+            dropAreaLabel.classList.remove('drag-over');
+        });
+        dropAreaLabel.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropAreaLabel.classList.remove('drag-over');
+            const files = event.dataTransfer.files;
+            handleFileSelect({ target: { files: files } });
+        });
+
+        // --- Core Functions ---
+
+        function resetApp() {
+            uploadedFiles = [];
+            renamedFilesData = [];
+            individualFormData = []; // Reset individual form data
+            renamedFilesUl.innerHTML = '';
+            
+            // Hide all dynamic sections
+            mainFormSection.classList.add('hidden');
+            individualFileSectionsContainer.style.display = 'none';
+            individualFileSectionsContainer.innerHTML = ''; // Clear dynamically added fields
+            mainButtonGroup.style.display = 'none'; // Hide main button group
+            downloadButtonsContainer.style.display = 'none'; // Hide download buttons container
+            fileListSection.style.display = 'none'; // Hide preview section
+            
+            // Reset main form fields
+            brandNameInput.value = '';
+            modelNameInput.value = '';
+            colorInput.value = '';
+            typeSelect.value = '';
+            editionSelect.value = '';
+            channelSelect.value = ''; // Reset new channel field
+            groupLivePreview.textContent = 'New Name Preview:'; // Reset group live preview
+
+            // Clear any error messages
+            clearAllErrors();
+
+            // Hide all modal specific content
+            zipFileNameInputGroup.style.display = 'none';
+            modalDownloadButtons.style.display = 'none';
+            modalChoiceButtons.style.display = 'none';
+            modalConfirmButtons.style.display = 'none'; // Hide confirmation buttons
+            modalCancelBtn.style.display = 'none'; // Hide the general cancel button for initial choice
+            genericModal.style.display = 'none'; // Ensure modal is hidden
+
+            // Show only the drop area
+            dropAreaLabel.style.display = 'flex';
+            imageUpload.value = ''; // Clear file input
+            processFilesBtn.textContent = 'Rename Files'; // Reset button text
+            currentProcessingMode = ''; // Reset mode
+        }
+
+        function clearAllErrors() {
+            clearError(formGroupBrandName);
+            clearError(formGroupModelName);
+            clearError(formGroupType);
+
+            // Clear errors for individual fields if they exist
+            const allIndividualFormGroups = individualFileSectionsContainer.querySelectorAll('.form-group.error');
+            allIndividualFormGroups.forEach(group => {
+                group.classList.remove('error');
+                const errorMessage = group.querySelector('.error-message');
+                if (errorMessage) errorMessage.style.display = 'none';
+            });
+        }
+
+
+        function handleFileSelect(event) {
+            uploadedFiles = Array.from(event.target.files);
+            renamedFilesData = []; // Clear previous data
+            individualFormData = uploadedFiles.map(file => ({ // Initialize individual form data
+                brand: '',
+                model: '',
+                color: '',
+                type: '',
+                edition: '',
+                channel: '' // Year is now auto-generated
+            }));
+            renamedFilesUl.innerHTML = ''; // Clear preview
+            downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
+            fileListSection.style.display = 'none'; // Hide preview section
+
+            if (uploadedFiles.length > 0) {
+                dropAreaLabel.style.display = 'none'; // Hide drop area once files are selected
+                mainButtonGroup.style.display = 'flex'; // Show process/download/reset buttons (now flex)
+                resetBtnTop.style.display = 'inline-block'; // Ensure top reset button is visible
+                processFilesBtn.textContent = `Rename ${uploadedFiles.length} File${uploadedFiles.length > 1 ? 's' : ''}`;
+
+                if (uploadedFiles.length > 1) {
+                    showInitialProcessingChoiceModal();
+                } else {
+                    // Single file, directly show group naming fields
+                    showGroupNamingFields();
+                }
+            } else {
+                resetApp(); // If no files selected, reset app
+            }
+        }
+
+        function processFiles() {
+            // Validate based on current mode
+            let isValid = true;
+            if (currentProcessingMode === 'group') {
+                isValid = validateMainForm();
+            } else if (currentProcessingMode === 'individual') {
+                isValid = validateIndividualForms();
+            }
+
+            if (!isValid) {
+                // Using a simple alert for now as per original code, but could be enhanced with custom modal
+                alert('Please correct the highlighted fields.');
+                return; // Stop if validation fails
+            }
+
+            // Call the unified processAndDisplayNames function
+            processAndDisplayNames(currentProcessingMode === 'group');
+        }
+
+        function validateMainForm() {
+            let isValid = true;
+
+            if (brandNameInput.value.trim() === '') { formGroupBrandName.classList.add('error'); errorBrandName.style.display = 'block'; isValid = false; } else { clearError(formGroupBrandName); }
+            if (modelNameInput.value.trim() === '') { formGroupModelName.classList.add('error'); errorModelName.style.display = 'block'; isValid = false; } else { clearError(formGroupModelName); }
+            if (typeSelect.value.trim() === '') { formGroupType.classList.add('error'); errorType.style.display = 'block'; isValid = false; } else { clearError(formGroupType); }
+            
+            return isValid;
+        }
+
+        function validateIndividualForms() {
+            let isValid = true;
+            const individualFileForms = individualFileSectionsContainer.querySelectorAll('.individual-file-section');
+
+            individualFileForms.forEach((section, index) => {
+                const formData = individualFormData[index]; // Get data from our JS array
+                
+                // Clear previous errors for this section
+                section.querySelectorAll('.form-group.error').forEach(group => {
+                    group.classList.remove('error');
+                    const errorMessage = group.querySelector('.error-message');
+                    if (errorMessage) errorMessage.style.display = 'none';
+                });
+
+                if (formData.brand.trim() === '') {
+                    section.querySelector('[data-field="brandName"]').closest('.form-group').classList.add('error');
+                    section.querySelector('[data-field="brandName"]').closest('.form-group').querySelector('.error-message').style.display = 'block';
+                    isValid = false;
+                }
+                if (formData.model.trim() === '') {
+                    section.querySelector('[data-field="modelName"]').closest('.form-group').classList.add('error');
+                    section.querySelector('[data-field="modelName"]').closest('.form-group').querySelector('.error-message').style.display = 'block';
+                    isValid = false;
+                }
+                if (formData.type.trim() === '') {
+                    section.querySelector('[data-field="type"]').closest('.form-group').classList.add('error');
+                    section.querySelector('[data-field="type"]').closest('.form-group').querySelector('.error-message').style.display = 'block';
+                    isValid = false;
+                }
+            });
+            return isValid;
+        }
+
+
+        function clearError(formGroupElement) {
+            formGroupElement.classList.remove('error');
+            const errorMessageSpan = formGroupElement.querySelector('.error-message');
+            if (errorMessageSpan) {
+                errorMessageSpan.style.display = 'none';
+            }
+        }
+
+        function showInitialProcessingChoiceModal() {
+            genericModalTitle.textContent = 'How would you like to process these files?';
+            genericModalDescription.textContent = 'Choose an option to proceed with renaming your uploaded images.';
+            
+            // Hide ZIP input and download buttons
+            zipFileNameInputGroup.style.display = 'none';
+            modalDownloadButtons.style.display = 'none';
+            modalConfirmButtons.style.display = 'none'; // Hide confirmation buttons
+
+            // Show choice buttons
+            modalChoiceButtons.style.display = 'flex';
+            modalCancelBtn.style.display = 'inline-block'; // Show general cancel button
+
+            genericModal.style.display = 'flex'; // Show the modal
+        }
+
+        /**
+         * Displays a custom modal to get a name from the user (for ZIP or individual file edit).
+         * @param {string} title The title for the modal.
+         * @param {string} description The description for the modal.
+         * @param {string} defaultName The default name to pre-fill the input.
+         * @returns {Promise<string|null>} A promise that resolves with the entered name or null if cancelled.
+         */
+        function showNameInputModal(title, description, defaultName) {
+            return new Promise((resolve) => {
+                genericModalTitle.textContent = title;
+                genericModalDescription.textContent = description;
+                zipFileNameInput.value = defaultName;
+
+                // Hide choice buttons and confirmation buttons
+                modalChoiceButtons.style.display = 'none';
+                modalCancelBtn.style.display = 'none';
+                modalConfirmButtons.style.display = 'none';
+
+                // Show ZIP input and download buttons (repurposed for generic input)
+                zipFileNameInputGroup.style.display = 'block';
+                modalDownloadButtons.style.display = 'flex';
+                modalDownloadConfirmBtn.textContent = 'Confirm'; // Generic confirm
+                modalDownloadCancelBtn.textContent = 'Cancel'; // Generic cancel
+
+                genericModal.style.display = 'flex'; // Show the modal
+
+                // Clear previous listeners to avoid multiple calls
+                modalDownloadConfirmBtn.onclick = null;
+                modalDownloadCancelBtn.onclick = null;
+                zipFileNameInput.onkeydown = null;
+
+                modalDownloadConfirmBtn.onclick = () => {
+                    genericModal.style.display = 'none';
+                    resolve(zipFileNameInput.value);
+                };
+
+                modalDownloadCancelBtn.onclick = () => {
+                    genericModal.style.display = 'none';
+                    resolve(null); // User cancelled
+                };
+
+                // Allow pressing Enter to confirm
+                zipFileNameInput.onkeydown = (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault(); // Prevent default form submission
+                        modalDownloadConfirmBtn.click(); // Simulate click on confirm
+                    }
+                };
+            });
+        }
+
+        /**
+         * Displays a confirmation modal (Yes/No).
+         * @param {string} title The title for the modal.
+         * @param {string} message The confirmation message.
+         * @returns {Promise<boolean>} A promise that resolves to true if confirmed (Yes), false otherwise (No or cancelled).
+         */
+        function showConfirmationModal(title, message) {
+            return new Promise((resolve) => {
+                genericModalTitle.textContent = title;
+                genericModalDescription.textContent = message;
+
+                // Hide other modal content
+                zipFileNameInputGroup.style.display = 'none';
+                modalDownloadButtons.style.display = 'none';
+                modalChoiceButtons.style.display = 'none';
+                modalCancelBtn.style.display = 'none';
+
+                // Show confirmation buttons
+                modalConfirmButtons.style.display = 'flex';
+
+                genericModal.style.display = 'flex';
+
+                // Clear previous listeners
+                modalConfirmYesBtn.onclick = null;
+                modalConfirmNoBtn.onclick = null;
+
+                modalConfirmYesBtn.onclick = () => {
+                    genericModal.style.display = 'none';
+                    resolve(true);
+                };
+
+                modalConfirmNoBtn.onclick = () => {
+                    genericModal.style.display = 'none';
+                    resolve(false);
+                };
+            });
+        }
+
+        function showGroupNamingFields() {
+            currentProcessingMode = 'group';
+            mainFormSection.classList.remove('hidden'); // Show main form
+            individualFileSectionsContainer.style.display = 'none'; // Hide individual sections
+            individualFileSectionsContainer.innerHTML = ''; // Clear any previous individual fields
+            processFilesBtn.textContent = 'Rename Files'; // Ensure button text is correct
+            downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
+            fileListSection.style.display = 'none'; // Hide preview section
+            resetBtnTop.style.display = 'inline-block'; // Ensure top reset button is visible
+            updateGroupLivePreview(); // Initial update for group live preview
+        }
+
+        function showIndividualNamingFields() {
+            currentProcessingMode = 'individual';
+            mainFormSection.classList.add('hidden'); // Hide main form
+            individualFileSectionsContainer.style.display = 'block'; // Show individual sections container
+            renderIndividualNamingFields(); // Call the new render function
+            resetBtnTop.style.display = 'inline-block'; // Ensure top reset button is visible
+        }
+
+        function renderIndividualNamingFields() {
+            individualFileSectionsContainer.innerHTML = ''; // Clear previous individual fields
+            processFilesBtn.textContent = 'Rename Files'; // Ensure button text is correct
+            downloadButtonsContainer.style.display = 'none'; // Hide download buttons until processed
+            fileListSection.style.display = 'none'; // Hide preview section
+
+            uploadedFiles.forEach((file, index) => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.classList.add('individual-file-section');
+                sectionDiv.setAttribute('data-index', index); // Add data-index for easy reference
+                // Removed: sectionDiv.draggable = true; // Make it draggable
+
+                // Removed: Drag and drop event listeners
+                // sectionDiv.addEventListener('dragstart', handleDragStart);
+                // sectionDiv.addEventListener('dragover', handleDragOver);
+                // sectionDiv.addEventListener('dragleave', handleDragLeave);
+                // sectionDiv.addEventListener('drop', handleDrop);
+                // sectionDiv.addEventListener('dragend', handleDragEnd);
+
+                // Removed: Drag handle
+                // const dragHandle = document.createElement('div');
+                // dragHandle.classList.add('drag-handle');
+                // dragHandle.innerHTML = `
+                //     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                //         <line x1="3" y1="12" x2="21" y2="12"></line>
+                //         <line x1="3" y1="6" x2="21" y2="6"></line>
+                //         <line x1="3" y1="18" x2="21" y2="18"></line>
+                //     </svg>
+                // `;
+                // sectionDiv.appendChild(dragHandle);
+
+                // Add the delete "X" button
+                const deleteXButton = document.createElement('button');
+                deleteXButton.classList.add('delete-x-button');
+                deleteXButton.innerHTML = '&times;'; // HTML entity for 'x'
+                deleteXButton.title = `Remove ${file.name}`;
+                deleteXButton.addEventListener('click', () => deleteFileSection(index));
+                sectionDiv.appendChild(deleteXButton);
+
+                // Create content container for form fields and image preview
+                const contentContainer = document.createElement('div');
+                contentContainer.classList.add('content-container');
+                sectionDiv.appendChild(contentContainer);
+
+                // Create the header with image and file name
+                const fileHeaderDiv = document.createElement('div');
+                fileHeaderDiv.classList.add('file-header');
+                
+                const imgPreview = document.createElement('img');
+                imgPreview.classList.add('file-thumbnail');
+                imgPreview.alt = `Preview of ${file.name}`;
+                imgPreview.onerror = function() {
+                    this.style.display = 'none'; // Hide if image fails to load
+                };
+
+                const h3FileName = document.createElement('h3');
+                h3FileName.textContent = file.name;
+
+                fileHeaderDiv.appendChild(imgPreview);
+                fileHeaderDiv.appendChild(h3FileName);
+                contentContainer.appendChild(fileHeaderDiv); // Append to contentContainer
+
+                // Use FileReader to read the image and set its src
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imgPreview.src = e.target.result;
+                };
+                // Defensive check: Read the file only if it's an image and file.type is defined
+                if (file.type && file.type.startsWith('image/')) {
+                    try {
+                        reader.readAsDataURL(file);
+                    } catch (readError) {
+                        console.error(`Error reading file data for thumbnail of ${file.name}:`, readError);
+                        imgPreview.style.display = 'none'; // Hide if reading fails
+                    }
+                } else {
+                    imgPreview.style.display = 'none'; // Hide image if not an image file or type is undefined
+                    console.warn(`File ${file.name} is not an image or has no type (${file.type}). Thumbnail will not be shown.`);
+                }
+
+                const formFieldsGridDiv = document.createElement('div');
+                formFieldsGridDiv.classList.add('form-fields-grid');
+                formFieldsGridDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="individualBrandName_${index}">Brand Name:</label>
+                        <input type="text" id="individualBrandName_${index}" data-field="brandName" placeholder="e.g., Armando Simoni Club">
+                        <span class="error-message">Brand Name is required.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="individualModelName_${index}">Model Name:</label>
+                        <input type="text" id="individualModelName_${index}" data-field="modelName" placeholder="e.g., Bologna Extra">
+                        <span class="error-message">Model Name is required.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="individualColor_${index}">Color (Optional):</label>
+                        <input type="text" id="individualColor_${index}" data-field="color" placeholder="e.g., Black (Optional)">
+                    </div>
+                    <div class="form-group">
+                        <label for="individualEdition_${index}">Edition (Optional):</label>
+                        <select id="individualEdition_${index}" data-field="edition">
+                            <option value="">Select Edition</option>
+                            <optgroup label="Special Editions">
+                                <option value="LE">Limited Edition</option>
+                                <option value="SE">Special Edition</option>
+                            </optgroup>
+                            <optgroup label="Collections">
+                                <option value="Backroom">Backroom</option>
+                                <option value="Collection">Collection</option>
+                                <option value="Vintage">Vintage</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="individualChannel_${index}">Channel (Optional):</label>
+                        <select id="individualChannel_${index}" data-field="channel">
+                            <option value="">Select Channel</option>
+                            <optgroup label="Web Banners">
+                                <option value="CarouselBanner">Carousel Banner</option>
+                                <option value="SmallBanner">Small Banner</option>
+                            </optgroup>
+                            <optgroup label="Social Media">
+                                <option value="Facebook">Facebook</option>
+                                <option value="Instagram">Instagram</option>
+                                <option value="TikTok">TikTok</option>
+                                <option value="Twitter">Twitter</option>
+                                <option value="X">X</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="individualType_${index}">Type:</label>
+                        <select id="individualType_${index}" data-field="type">
+                            <option value="">Select Type</option>
+                            <optgroup label="Writing Instruments">
+                                <option value="FountainPen">Fountain Pen</option>
+                                <option value="Rollerball">Rollerball</option>
+                                <option value="Ballpoint">Ballpoint</option>
+                                <option value="MechanicalPencil">Mechanical Pencil</option>
+                            </optgroup>
+                            <optgroup label="Ink & Refills">
+                                <option value="BottleInk">Bottle Ink</option>
+                                <option value="Cartridge">Cartridge</option>
+                                <option value="BallpointRefill">Ballpoint Refill</option>
+                                <option value="RollerballRefill">Rollerball Refill</option>
+                                <option value="GelRefill">Gel Refill</option>
+                                <option value="Refill">Refill</option>
+                                <option value="Led">Led</p>
+                            </optgroup>
+                            <optgroup label="Paper">
+                                <option value="Notebook">Notebook</option>
+                                <option value="Pad">Pad</option>
+                                <option value="Paper">Paper</option>
+                            </optgroup>
+                            <optgroup label="Accessories">
+                                <option value="Accessory">Accessory</option>
+                                <option value="LeatherCase">Leather Case</option>
+                                <option value="Case">Case</p>
+                                <option value="Inkwell">Inkwell</p>
+                            </optgroup>
+                        </select>
+                        <span class="error-message">Type is required.</span>
+                    </div>
+                    <!-- Year field removed as per request from individual section -->
+                `;
+                contentContainer.appendChild(formFieldsGridDiv); // Append to contentContainer
+
+                // Add live preview display
+                const livePreviewDiv = document.createElement('div');
+                livePreviewDiv.classList.add('live-preview-name');
+                livePreviewDiv.textContent = 'New Name Preview:'; // Initial text
+                contentContainer.appendChild(livePreviewDiv); // Append to contentContainer
+
+                const clearButton = document.createElement('button');
+                clearButton.type = 'button';
+                clearButton.classList.add('clear-individual-btn');
+                clearButton.textContent = 'Clear Fields for This File';
+                clearButton.dataset.index = index; // Associate with the file's index
+                contentContainer.appendChild(clearButton); // Append to contentContainer
+
+                individualFileSectionsContainer.appendChild(sectionDiv);
+
+                // Populate fields with existing data and attach live input listeners
+                const formData = individualFormData[index];
+                const brandInput = sectionDiv.querySelector('[data-field="brandName"]');
+                const modelInput = sectionDiv.querySelector('[data-field="modelName"]');
+                const colorInput = sectionDiv.querySelector('[data-field="color"]');
+                const typeInput = sectionDiv.querySelector('[data-field="type"]');
+                const editionInput = sectionDiv.querySelector('[data-field="edition"]');
+                const channelInput = sectionDiv.querySelector('[data-field="channel"]');
+
+                const updateLivePreview = () => {
+                    const newName = generateFileNameFromIndividualInputs(
+                        file, // Use the original file object from uploadedFiles
+                        brandInput.value,
+                        modelInput.value,
+                        colorInput.value,
+                        typeInput.value,
+                        editionInput.value,
+                        channelInput.value
+                    );
+                    livePreviewDiv.textContent = `New Name Preview: ${newName}`;
+                    
+                    // Update the renamedFilesData array with the new name
+                    if (renamedFilesData[index]) {
+                        renamedFilesData[index].newName = newName;
+                        // Also update the main file list preview
+                        updateFileListItem(index, newName);
+                    }
+
+                    // Update individualFormData for consistency
+                    individualFormData[index] = {
+                        brand: brandInput.value,
+                        model: modelInput.value,
+                        color: colorInput.value,
+                        type: typeInput.value,
+                        edition: editionInput.value,
+                        channel: channelInput.value
+                    };
+                    // IMPORTANT: Do NOT modify uploadedFiles here. It should always hold the original File objects.
+                };
+
+                if (formData) {
+                    brandInput.value = formData.brand;
+                    modelInput.value = formData.model;
+                    colorInput.value = formData.color;
+                    typeInput.value = formData.type;
+                    editionInput.value = formData.edition;
+                    channelInput.value = formData.channel;
+                    updateLivePreview(); // Set initial preview
+                }
+
+                brandInput.addEventListener('input', (e) => {
+                    clearError(e.target.closest('.form-group'));
+                    e.target.value = capitalizeWordsLiveInput(e.target.value);
+                    updateLivePreview();
+                });
+                modelInput.addEventListener('input', (e) => {
+                    clearError(e.target.closest('.form-group'));
+                    e.target.value = capitalizeWordsLiveInput(e.target.value);
+                    updateLivePreview();
+                });
+                colorInput.addEventListener('input', (e) => {
+                    e.target.value = capitalizeWordsLiveInput(e.target.value);
+                    updateLivePreview();
+                });
+                typeInput.addEventListener('change', (e) => {
+                    clearError(e.target.closest('.form-group'));
+                    updateLivePreview();
+                });
+                editionInput.addEventListener('change', (e) => { // Changed to 'change' for select elements
+                    updateLivePreview();
+                });
+                channelInput.addEventListener('change', (e) => {
+                    updateLivePreview();
+                });
+
+                // Add event listener for the new clear button
+                clearButton.addEventListener('click', (e) => {
+                    const targetSection = e.target.closest('.individual-file-section');
+                    clearIndividualSectionFields(targetSection, index); // Pass index to clear data
+                    updateLivePreview(); // Update preview after clearing
+                });
+            });
+        }
+
+        // Function to delete a file section
+        async function deleteFileSection(indexToDelete) {
+            const fileName = uploadedFiles[indexToDelete].name; // Use .name directly as it's a File object
+            const confirmed = await showConfirmationModal(
+                'Confirm Deletion',
+                `Are you sure you want to remove "${fileName}" from the list?`
+            );
+
+            if (confirmed) {
+                // Remove the file and its corresponding form data
+                uploadedFiles.splice(indexToDelete, 1);
+                individualFormData.splice(indexToDelete, 1);
+                
+                // If no files left, reset the app completely
+                if (uploadedFiles.length === 0) {
+                    resetApp();
+                    return; // Exit the function after reset
+                }
+
+                // Re-render the individual naming fields to update indices and display
+                renderIndividualNamingFields(); // This will clear and re-add the individual input sections
+
+                // After re-rendering the input fields, we need to re-process the remaining files
+                // and update the *renamed files preview list* and *download buttons*.
+                // We are still in 'individual' mode, so pass false to processAndDisplayNames.
+                // This will regenerate renamedFilesData and show/hide download buttons correctly.
+                processAndDisplayNames(false); // Pass false as it's individual mode
+            }
+        }
+
+
+        // --- Removed Drag and Drop Handlers ---
+        // function handleDragStart(e) {
+        //     if (!e.target.classList.contains('individual-file-section') && !e.target.closest('.drag-handle')) {
+        //         e.preventDefault();
+        //         return;
+        //     }
+        //     draggedItemIndex = parseInt(e.target.closest('.individual-file-section').dataset.index);
+        //     e.dataTransfer.effectAllowed = 'move';
+        //     e.dataTransfer.setData('text/plain', draggedItemIndex);
+        //     e.target.closest('.individual-file-section').classList.add('dragging');
+        // }
+
+        // function handleDragOver(e) {
+        //     e.preventDefault();
+        //     e.dataTransfer.dropEffect = 'move';
+        //     const targetSection = e.target.closest('.individual-file-section');
+        //     if (targetSection) {
+        //         document.querySelectorAll('.individual-file-section').forEach(section => {
+        //             section.classList.remove('drag-over-target');
+        //         });
+        //         if (parseInt(targetSection.dataset.index) !== draggedItemIndex) {
+        //             targetSection.classList.add('drag-over-target');
+        //         }
+        //     }
+        // }
+
+        // function handleDragLeave(e) {
+        //     const targetSection = e.target.closest('.individual-file-section');
+        //     if (targetSection) {
+        //         targetSection.classList.remove('drag-over-target');
+        //     }
+        // }
+
+        // function handleDrop(e) {
+        //     e.preventDefault();
+        //     const targetSection = e.target.closest('.individual-file-section');
+        //     if (targetSection) {
+        //         targetSection.classList.remove('drag-over-target');
+        //         const dropTargetIndex = parseInt(targetSection.dataset.index);
+
+        //         if (draggedItemIndex !== dropTargetIndex) {
+        //             const [draggedFile] = uploadedFiles.splice(draggedItemIndex, 1);
+        //             const [draggedFormData] = individualFormData.splice(draggedItemIndex, 1);
+
+        //             uploadedFiles.splice(dropTargetIndex, 0, draggedFile);
+        //             individualFormData.splice(dropTargetIndex, 0, draggedFormData);
+
+        //             renderIndividualNamingFields();
+        //         }
+        //     }
+        // }
+
+        // function handleDragEnd(e) {
+        //     e.target.closest('.individual-file-section').classList.remove('dragging');
+        //     document.querySelectorAll('.drag-over-target').forEach(el => el.classList.remove('drag-over-target'));
+        //     draggedItemIndex = -1;
+        // }
+
+
+        // Function to clear fields for a specific individual section
+        function clearIndividualSectionFields(sectionElement, index) {
+            // Clear DOM elements
+            sectionElement.querySelector('[data-field="brandName"]').value = '';
+            sectionElement.querySelector('[data-field="modelName"]').value = '';
+            sectionElement.querySelector('[data-field="color"]').value = '';
+            sectionElement.querySelector('[data-field="type"]').value = '';
+            sectionElement.querySelector('[data-field="edition"]').value = '';
+            sectionElement.querySelector('[data-field="channel"]').value = ''; // Clear new channel field
+            // No year to clear
+
+            // Clear corresponding data in individualFormData
+            individualFormData[index] = {
+                brand: '',
+                model: '',
+                color: '',
+                type: '',
+                edition: '',
+                channel: '' // No year to clear in data
+            };
+
+            // When clearing, also update the renamedFilesData and the main preview list
+            const originalFile = uploadedFiles[index];
+            const originalExtension = originalFile.name.split('.').pop();
+            // A common practice for "cleared" state is to revert to original name or a placeholder
+            // For now, let's revert to a generic name based on original file for consistency
+            const clearedName = `CLEARED_${originalFile.name}`; 
+            if (renamedFilesData[index]) {
+                renamedFilesData[index].newName = clearedName;
+                updateFileListItem(index, clearedName);
+            }
+        }
+
+
+        // Helper function to generate file name from individual inputs
+        function generateFileNameFromIndividualInputs(file, brand, model, color, type, edition, channel) {
+            const currentYear = new Date().getFullYear().toString(); // Get current year
+
+            const parts = [
+                sanitizeFileNameForOutput(brand),
+                sanitizeFileNameForOutput(model)
+            ];
+
+            if (color) {
+                parts.push(sanitizeFileNameForOutput(color));
+            }
+            
+            if (edition) {
+                parts.push(sanitizeFileNameForOutput(edition));
+            }
+            if (channel) { // Add channel if present
+                parts.push(sanitizeFileNameForOutput(channel));
+            }
+            parts.push(sanitizeFileNameForOutput(type));
+            
+            parts.push(currentYear); // Automatically append current year
+
+            let newName = parts.join('-');
+
+            const originalExtension = file.name.split('.').pop();
+            return `${newName}.${originalExtension}`;
+        }
+
+
+        // Helper function to capitalize the first letter of each word for live input
+        function capitalizeWordsLiveInput(str) {
+            return str.replace(/\b\w/g, char => char.toUpperCase());
+        }
+
+
+        // Main function to process and display names
+        async function processAndDisplayNames(isGroupMode) { // Simplified arguments
+            // Clear previous data for a fresh start
+            renamedFilesData = [];
+            renamedFilesUl.innerHTML = '';
+
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                const originalFile = uploadedFiles[i]; // This is always the original File object
+                let newName;
+
+                if (isGroupMode) {
+                    // Generate name from main form fields (group mode)
+                    newName = generateFileName(originalFile, i, uploadedFiles.length);
+                } else {
+                    // Generate name from individual form data
+                    const formData = individualFormData[i];
+                    newName = generateFileNameFromIndividualInputs(
+                        originalFile,
+                        formData.brand,
+                        formData.model,
+                        formData.color,
+                        formData.type,
+                        formData.edition,
+                        formData.channel
+                    );
+                }
+
+                if (!newName) {
+                    console.error("New name could not be generated for file:", originalFile.name);
+                    continue; // Skip this file but try to process others
+                }
+
+                try {
+                    const arrayBuffer = await originalFile.arrayBuffer();
+                    const blob = new Blob([arrayBuffer], { type: originalFile.type });
+
+                    renamedFilesData.push({
+                        originalFile: originalFile,
+                        newName: newName,
+                        blob: blob
+                    });
+                    addFileToList(newName, originalFile.name, renamedFilesData.length - 1);
+                } catch (error) {
+                    console.error("Error reading file or creating blob for:", originalFile.name, error);
+                    continue; // Skip this file and proceed with the next one
+                }
+            }
+            if (renamedFilesData.length > 0) {
+                downloadButtonsContainer.style.display = 'flex'; // Show the download buttons container
+                mainButtonGroup.style.display = 'none'; // Hide the top button group once processed
+                fileListSection.style.display = 'block'; // Ensure fileListSection is shown
+                // Scroll to the file list section after processing
+                fileListSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                // If after processing, no files were successfully renamed/blobbed, hide download buttons
+                downloadButtonsContainer.style.display = 'none';
+                mainButtonGroup.style.display = 'flex'; // Show main buttons again
+                fileListSection.style.display = 'none';
+                console.warn('No files could be processed for renaming. Please check for errors in the console and try again.');
+            }
+        }
+
+        // Helper function to generate name for group mode
+        function generateFileName(file, index, totalInGroup = 1) {
+            const brand = brandNameInput.value.trim();
+            const model = modelNameInput.value.trim();
+            const color = colorInput.value.trim();
+            const type = typeSelect.value.trim();
+            const edition = editionSelect.value.trim();
+            const channel = channelSelect.value.trim(); // Get new channel value
+            const currentYear = new Date().getFullYear().toString(); // Get current year automatically
+
+            const parts = [
+                sanitizeFileNameForOutput(brand),
+                sanitizeFileNameForOutput(model)
+            ];
+
+            if (color) {
+                parts.push(sanitizeFileNameForOutput(color));
+            }
+            
+            if (edition) {
+                parts.push(sanitizeFileNameForOutput(edition));
+            }
+            if (channel) { // Add channel if present
+                parts.push(sanitizeFileNameForOutput(channel));
+            }
+            parts.push(sanitizeFileNameForOutput(type));
+            
+            parts.push(currentYear); // Automatically append current year
+
+            let newName = parts.join('-');
+
+            if (totalInGroup > 1) {
+                newName += `_${index + 1}of${totalInGroup}`;
+            }
+
+            const originalExtension = file.name.split('.').pop();
+            return `${newName}.${originalExtension}`;
+        }
+
+        // Helper function to sanitize file names for output, including capitalization of words
+        function sanitizeFileNameForOutput(name) {
+            let sanitized = name.trim();
+            sanitized = sanitized.replace(/[^a-zA-Z0-9-_\s]/g, ' ');
+            sanitized = sanitized.replace(/\s+/g, ' ');
+            sanitized = sanitized.split(' ').map(word => {
+                if (word.length === 0) return '';
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }).join('-');
+            sanitized = sanitized.replace(/^-+|-+$/g, '');
+            return sanitized;
+        }
+
+        function addFileToList(newName, originalName, index) {
+            const listItem = document.createElement('li');
+            listItem.setAttribute('data-index', index);
+
+            listItem.innerHTML = `
+                <span><strong>Original:</strong> ${originalName} <br> <strong>Renamed:</strong> <span class="new-name-display">${newName}</span></span>
+                <span class="edit-icon" data-index="${index}" title="Edit Renamed Name">&#9998;</span>
+            `;
+            renamedFilesUl.appendChild(listItem);
+
+            const editIcon = listItem.querySelector('.edit-icon');
+            editIcon.addEventListener('click', (event) => {
+                const itemIndex = parseInt(event.target.dataset.index);
+                promptForRenameEdit(itemIndex);
+            });
+        }
+
+        function updateFileListItem(index, newName) {
+            const listItem = renamedFilesUl.querySelector(`li[data-index="${index}"]`);
+            if (listItem) {
+                listItem.querySelector('.new-name-display').textContent = newName;
+            }
+        }
+
+        function promptForRenameEdit(index) {
+            const currentName = renamedFilesData[index].newName;
+            const originalFileName = renamedFilesData[index].originalFile.name;
+            const originalExtension = originalFileName.split('.').pop();
+            const currentNameWithoutExt = currentName.replace(/\.[^/.]+$/, "");
+
+            // Using the custom modal for editing individual file names too
+            showNameInputModal(
+                `Edit Name for "${originalFileName}"`,
+                `Enter the new name for this file (without extension):`,
+                currentNameWithoutExt
+            ).then(newPromptName => {
+                if (newPromptName !== null && newPromptName.trim() !== "") {
+                    const finalNewName = `${sanitizeFileNameForOutput(newPromptName)}.${originalExtension}`;
+                    renamedFilesData[index].newName = finalNewName;
+                    updateFileListItem(index, finalNewName);
+                }
+            });
+        }
+
+        /**
+         * Detects if the current device is likely an iOS device.
+         * @returns {boolean} True if iOS, false otherwise.
+         */
+        function isIOSDevice() {
+            return [
+                'iPad Simulator',
+                'iPhone Simulator',
+                'iPod Simulator',
+                'iPad',
+                'iPhone',
+                'iPod'
+            ].includes(navigator.platform)
+            // iPad on iOS 13+ detection
+            || (navigator.userAgent.includes("Mac") && "ontouchstart" in document)
+            || (navigator.userAgent.includes("iPad") && "ontouchstart" in document);
+        }
+
+        async function downloadAllRenamedFiles() {
+            console.log("Attempting to download all renamed files (ZIP)...");
+            console.log("renamedFilesData content for ZIP:", renamedFilesData); // Log content
+            if (renamedFilesData.length === 0) {
+                console.warn('No files to download. Please process images first.');
+                console.log("renamedFilesData is empty. Aborting ZIP download.");
+                return;
+            }
+
+            // Check if FileSaver.js is loaded
+            if (typeof saveAs === 'undefined') {
+                console.error("FileSaver.js (saveAs function) is not defined. Cannot download files.");
+                return;
+            }
+
+            const defaultZipName = 'renamed_images.zip';
+            let zipFileName = await showNameInputModal(
+                'Enter ZIP File Name',
+                'Please enter a name for the compressed ZIP file:',
+                defaultZipName.replace('.zip', '')
+            );
+
+            // If user cancels the prompt, stop the download process
+            if (zipFileName === null || zipFileName.trim() === "") {
+                console.log("User cancelled ZIP file naming prompt or entered empty name.");
+                return;
+            }
+
+            // Ensure .zip extension is present
+            if (!zipFileName.toLowerCase().endsWith('.zip')) {
+                zipFileName += '.zip';
+            }
+            console.log(`User entered ZIP file name: ${zipFileName}`);
+
+            const zip = new JSZip();
+            let allBlobsReady = true;
+
+            for (const data of renamedFilesData) {
+                if (data.blob) {
+                    if (zip.files[data.newName]) {
+                        console.warn(`Duplicate filename detected in ZIP: ${data.newName}. This file will overwrite a previous one.`);
+                    }
+                    zip.file(data.newName, data.blob);
+                    console.log(`Added file to ZIP: ${data.newName}`);
+                } else {
+                    console.error(`Blob for ${data.newName} is missing. Cannot add to ZIP.`);
+                    allBlobsReady = false;
+                    break;
+                }
+            }
+
+            if (!allBlobsReady) {
+                console.error("Not all blobs were ready for ZIP creation. Aborting.");
+                return;
+            }
+
+            try {
+                processFilesBtn.disabled = true;
+                downloadAllBtn.disabled = true;
+                downloadIndividualBtn.disabled = true; // Disable other download button
+                shareFilesBtn.disabled = true; // Disable share button
+                resetBtnTop.disabled = true; // Disable top reset button
+                resetBtnBottom.disabled = true; // Disable bottom reset button
+                downloadAllBtn.textContent = 'Generating ZIP...';
+                console.log("Generating ZIP file asynchronously...");
+
+                const content = await zip.generateAsync({ type: "blob" });
+                
+                console.log("ZIP blob generated:", content);
+                console.log(`Calling saveAs with blob and filename: ${zipFileName}`);
+
+                saveAs(content, zipFileName);
+
+                if (isIOSDevice()) {
+                    console.log(`Your ZIP file "${zipFileName}" has been generated. Look for the download icon in Safari's address bar (circle with arrow), then tap it to open the ZIP in the Files app.`);
+                } else {
+                    console.log(`Your renamed files are ready for download as "${zipFileName}". Your browser will handle the download, which may automatically save to your device\'s Downloads folder or prompt you for a location.`);
+                }
+                console.log("ZIP download initiated successfully.");
+                
+            } catch (error) {
+                console.error("Error generating or saving ZIP:", error);
+            } finally {
+                processFilesBtn.disabled = false;
+                downloadAllBtn.disabled = false;
+                downloadIndividualBtn.disabled = false; // Re-enable other download button
+                shareFilesBtn.disabled = false;
+                resetBtnTop.disabled = false;
+                resetBtnBottom.disabled = false;
+                downloadAllBtn.textContent = 'Download All Renamed Files (ZIP)';
+                console.log("ZIP download process finished. Buttons re-enabled.");
+            }
+        }
+
+        async function downloadRenamedFilesIndividually() {
+            console.log("Attempting to download files individually...");
+            console.log("renamedFilesData content for individual download:", renamedFilesData); // Log content
+            if (renamedFilesData.length === 0) {
+                console.warn('No files to download. Please process images first.');
+                console.log("renamedFilesData is empty. Aborting individual download.");
+                return;
+            }
+
+            // Check if FileSaver.js is loaded
+            if (typeof saveAs === 'undefined') {
+                console.error("FileSaver.js (saveAs function) is not defined for individual download. Cannot download files.");
+                return;
+            }
+
+            processFilesBtn.disabled = true;
+            downloadAllBtn.disabled = true;
+            downloadIndividualBtn.disabled = true;
+            shareFilesBtn.disabled = true; // Disable share button
+            resetBtnTop.disabled = true;
+            resetBtnBottom.disabled = true;
+            downloadIndividualBtn.textContent = 'Downloading...';
+            console.log("Individual download: buttons disabled.");
+
+            let successfulDownloads = 0;
+            for (const data of renamedFilesData) {
+                if (data.blob) {
+                    try {
+                        console.log(`Attempting to save individual file: ${data.newName}`);
+                        saveAs(data.blob, data.newName);
+                        successfulDownloads++;
+                        console.log(`Successfully initiated download for: ${data.newName}`);
+                    } catch (error) {
+                        console.error(`Error downloading ${data.newName}:`, error);
+                    }
+                } else {
+                    console.error(`Blob for ${data.newName} is missing. Cannot download.`);
+                }
+            }
+
+            if (successfulDownloads > 0) {
+                if (isIOSDevice()) {
+                    console.log(`Initiated download for ${successfulDownloads} file(s). On iOS, each file will open in a new tab. Long-press on the image/content to save it to Photos or Files.`);
+                } else {
+                    console.log(`Initiated download for ${successfulDownloads} file(s). Your browser will handle the download for each, which may automatically save to your device\'s Downloads folder or prompt you for a location.`);
+                }
+            } else {
+                console.warn('No files were successfully downloaded. Please check the console for errors.');
+            }
+            console.log(`Individual download: finished. Successful downloads: ${successfulDownloads}`);
+
+            processFilesBtn.disabled = false;
+            downloadAllBtn.disabled = false;
+            downloadIndividualBtn.disabled = false;
+            shareFilesBtn.disabled = false;
+            resetBtnTop.disabled = false;
+            resetBtnBottom.disabled = false;
+            downloadIndividualBtn.textContent = 'Download Files Individually';
+            console.log("Individual download: buttons re-enabled.");
+        }
+
+        async function handleShareFiles() {
+            console.log("Attempting to share files...");
+            console.log("renamedFilesData content for sharing:", renamedFilesData); // Log content
+            if (renamedFilesData.length === 0) {
+                console.warn('No files to share. Please process images first.');
+                return;
+            }
+
+            // Prepare File objects from the blobs
+            const filesToShare = renamedFilesData.map(data => {
+                // The File constructor takes (fileBits, fileName, options)
+                return new File([data.blob], data.newName, { type: data.blob.type });
+            });
+
+            // Check if Web Share API is supported and can share files
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: filesToShare })) {
+                try {
+                    processFilesBtn.disabled = true;
+                    downloadAllBtn.disabled = true;
+                    downloadIndividualBtn.disabled = true;
+                    shareFilesBtn.disabled = true;
+                    resetBtnTop.disabled = true;
+                    resetBtnBottom.disabled = true;
+                    shareFilesBtn.textContent = 'Preparing to Share...';
+
+                    console.log('The native Share Sheet will now appear. Please select "Save to Files" or your desired app.');
+                    
+                    await navigator.share({
+                        files: filesToShare,
+                        title: 'Renamed Images',
+                        text: 'Here are your renamed images from the Image Renamer app.'
+                    });
+                    console.log('Files shared successfully via Web Share API.');
+                    console.log('Files shared successfully!');
+
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        console.log('User cancelled sharing.');
+                        console.log('Sharing cancelled by user.');
+                    } else {
+                        console.error('Error sharing files:', error);
+                        console.error(`Failed to share files: ${error.message}. Please try downloading them instead.`);
+                    }
+                } finally {
+                    processFilesBtn.disabled = false;
+                    downloadAllBtn.disabled = false;
+                    downloadIndividualBtn.disabled = false;
+                    shareFilesBtn.disabled = false;
+                    resetBtnTop.disabled = false;
+                    resetBtnBottom.disabled = false;
+                    shareFilesBtn.textContent = 'Downlaod Renamed Files iOS';
+                }
+            } else {
+                console.warn('Your browser does not support sharing files directly via the native Share Sheet, or the current context is not secure (HTTPS). Please use the "Download" buttons instead.');
+                console.warn('Web Share API for files not supported or not in secure context.');
+            }
+        }
+
+        // Initial update for the group live preview when the app loads
+        function updateGroupLivePreview() {
+            // Only update if in group mode and there are uploaded files
+            if (currentProcessingMode === 'group' && uploadedFiles.length > 0) {
+                // For a single file in group mode, we don't append _1of1
+                const tempFileName = generateFileName(uploadedFiles[0], 0, uploadedFiles.length > 1 ? uploadedFiles.length : 1);
+                groupLivePreview.textContent = `New Name Preview: ${tempFileName}`;
+            } else if (currentProcessingMode === 'group' && uploadedFiles.length === 0) {
+                groupLivePreview.textContent = 'New Name Preview:'; // Reset if no files
+            }
+        }
+
+
+        // Initialize display states on load
+        document.addEventListener('DOMContentLoaded', resetApp);
+    </script>
+</body>
+</html>
